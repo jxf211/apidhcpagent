@@ -1,15 +1,22 @@
 #!/usr/bin/env python
 # encoding: utf-8
-from gevent.wsgi import WSGIServer
+from common import eventlet_utils
+eventlet_utils.monkey_patch()
 import argparse
 import os
 import signal
 import sys
 import traceback
-
-from app import app
-import logger
+from oslo_config import cfg
 from utils import get_ip_address
+from common import config as common_config
+from nspagent.dhcpcommon import config
+from nspagent.dhcp.linux import interface
+from nspagent.dhcp import config as dhcp_config
+from oslo_log import log as logging
+from server import Server
+from router import API
+LOG = logging.getLogger(__name__)
 
 def daemonize(stdin='/dev/null', stdout='/dev/null', stderr='/dev/null'):
     """
@@ -51,32 +58,49 @@ def daemonize(stdin='/dev/null', stdout='/dev/null', stderr='/dev/null'):
     os.dup2(so.fileno(), sys.stdout.fileno())
     os.dup2(se.fileno(), sys.stderr.fileno())
 
+def register_options():
+    config.register_interface_driver_opts_helper(cfg.CONF)
+    config.register_use_namespaces_opts_helper(cfg.CONF)
+    config.register_agent_state_opts_helper(cfg.CONF)
+    cfg.CONF.register_opts(dhcp_config.DHCP_AGENT_OPTS)
+    cfg.CONF.register_opts(dhcp_config.DHCP_OPTS)
+    cfg.CONF.register_opts(dhcp_config.DNSMASQ_OPTS)
+    #cfg.CONF.register_opts(metadata_config.DRIVER_OPTS)
+    #cfg.CONF.register_opts(metadata_config.SHARED_OPTS)
+    cfg.CONF.register_opts(interface.OPTS)
+
 def sigterm_handler(signal, frame):
         sys.exit(0)
 
 if __name__== '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-d", "--daemon", help="run in background",
-                        action="store_true")
+    register_options()
+    common_config.init(sys.argv[1:])
+    config.setup_logging()
 
-    args = parser.parse_args()
-    if args.daemon and os.getppid() != 1:
-        daemonize()
+    #parser = argparse.ArgumentParser()
+    #parser.add_argument("-d", "--daemon", help="run in background",
+    #                    action="store_true")
+
+    #args = parser.parse_args()
+    #if args.daemon and os.getppid() != 1:
+    #    daemonize()
 
     signal.signal(signal.SIGTERM, sigterm_handler)
 
-    logger.init_logger(args)
-    logger.log.info('Launching DhcpAgent API Stack (DHCP_AGENT) ...')
+   # init_logger(args)
+    LOG.info('Launching DhcpAgent API Stack (DHCP_AGENT) ...')
 
 
     #local_ctrl_ip = get_ip_address("nspbr0")
     local_ctrl_ip = "192.168.49.22"
     try:
-        logger.log.info('Gevent approaching ...')
-        server = WSGIServer((local_ctrl_ip, 20009), app)
-        server.serve_forever()
+        LOG.info('Gevent approaching ... server ip:%s', local_ctrl_ip)
+        app = API()
+        server = Server(app, host=local_ctrl_ip , port="20010")
+        server.start()
+        server.wait()
     except Exception as e:
-        logger.log.error('Exception: %s' % e)
-        logger.log.error('%s' % traceback.format_exc())
+        LOG.error('Exception: %s' % e)
+        LOG.error('%s' % traceback.format_exc())
         sys.exit(1)
 

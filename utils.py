@@ -4,12 +4,12 @@ import commands
 import struct
 import socket
 import fcntl
-
 from flask import Response
-from logger import log
+from oslo_log import log as logging
 from const import DEBUG, SUCCESS, DATE_PATTEN, \
     INVALID_POST_DATA, HTTP_BAD_REQUEST
 
+log  = logging.getLogger(__name__)
 
 class LCJSONEncoder(json.JSONEncoder):
     def default(self, obj):
