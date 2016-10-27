@@ -6,7 +6,7 @@ import os
 import json
 import time
 
-url =  "http://192.168.49.22:20010/v1/dhcp/"
+url =  "http://192.168.49.22:20010/v1/dhcp_network/"
 
 network = {"id": "24783e1a-63fe-43d5-9989-e1515c24eecd",
                                                    "subnets": [{"id": "ec1028b2-7cb0-4feb-b974-6b8ea7e7f08f",
@@ -94,7 +94,7 @@ network = {"id": "24783e1a-63fe-43d5-9989-e1515c24eecd",
                                 }],
                         }],
                     "admin_state_up":True,
-                    "vlantag":1021,
+                    "vlantag":200,
                     "tenant_id":"befa06e66e8047a1929a3912fff2c591"}
 
 network_data = {"network": network }

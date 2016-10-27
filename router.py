@@ -248,10 +248,54 @@ class API(Router):
                 path_prefix = '/v1',
                 routes = [
                     {   'name':'network_create_end',
-                        'url':'/dhcp/',
+                        'url':'/dhcp_network/',
                         'action':'network_create_end',
                         'method':'POST'
-                    }
+                    },
+
+                    {
+                        'name':'network_update_end',
+                        'url':'/dhcp_network/',
+                        'action':'network_update_end',
+                        'method':'PATCH'
+                    },
+
+                    {
+                        'name':'network_delete_end',
+                        'url':'/dhcp_network/',
+                        'action':'network_delete_end',
+                        'method':'DELETE'
+                    },
+
+                    {
+                        'name':'subnet_update_end',
+                        'url':'/dhcp_subnet/',
+                        'action':'subnet_update_end',
+                        'method':'PATCH'
+                    },
+
+                    {
+                        'name':'subnet_delete_end',
+                        'url':'/dhcp_subnet/',
+                        'action':'subnet_delete_end',
+                        'method':'DELETE'
+                    },
+
+                    {
+                        'name':'port_update_end',
+                        'url':'/dhcp_port/',
+                        'action':'port_update_end',
+                        'method':'PATCH'
+                    },
+
+                    {
+                        'name':'port_delete_end',
+                        'url':'/dhcp_port/',
+                        'action':'port_delete_end',
+                        'method':'DELETE'
+                    },
+
+
                 ]
 
                 )

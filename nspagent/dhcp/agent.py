@@ -286,7 +286,6 @@ class DhcpAgent(object):
                 self.cache.put(network)
         else:
             self.disable_dhcp_helper(network.id)
-
     @utils.synchronized('dhcp-agent')
     def network_create_end(self, req=None, **kwargs):
         """Handle the network.create.end notification event."""
@@ -298,8 +297,9 @@ class DhcpAgent(object):
         return 200, "OK"
 
     @utils.synchronized('dhcp-agent')
-    def network_update_end(self, context, payload):
+    def network_update_end(self, req=None, **kwargs):
         """Handle the network.update.end notification event."""
+        payload = json.loads(req.body)
         network_id = payload['network']['id']
         if payload['network']['admin_state_up']:
             self.enable_dhcp_helper(network_id)
@@ -307,13 +307,15 @@ class DhcpAgent(object):
             self.disable_dhcp_helper(network_id)
 
     @utils.synchronized('dhcp-agent')
-    def network_delete_end(self, context, payload):
+    def network_delete_end(self, req=None, **kwargs):
         """Handle the network.delete.end notification event."""
+        payload = json.loads(req.body)
         self.disable_dhcp_helper(payload['network_id'])
 
     @utils.synchronized('dhcp-agent')
-    def subnet_update_end(self, context, payload):
+    def subnet_update_end(self, req=None, **kwargs):
         """Handle the subnet.update.end notification event."""
+        payload = json.loads(req.body)
         network_id = payload['subnet']['network_id']
         self.refresh_dhcp_helper(network_id)
 
@@ -321,16 +323,18 @@ class DhcpAgent(object):
     subnet_create_end = subnet_update_end
 
     @utils.synchronized('dhcp-agent')
-    def subnet_delete_end(self, context, payload):
+    def subnet_delete_end(self, req=None, **kwargs):
         """Handle the subnet.delete.end notification event."""
+        payload = json.loads(req.body)
         subnet_id = payload['subnet_id']
         network = self.cache.get_network_by_subnet_id(subnet_id)
         if network:
             self.refresh_dhcp_helper(network.id)
 
     @utils.synchronized('dhcp-agent')
-    def port_update_end(self, context, payload):
+    def port_update_end(self, req=None, **kwargs):
         """Handle the port.update.end notification event."""
+        payload = json.loads(req.body)
         updated_port = dhcp.DictModel(payload['port'])
         network = self.cache.get_network_by_id(updated_port.network_id)
         if network:
@@ -354,8 +358,9 @@ class DhcpAgent(object):
     port_create_end = port_update_end
 
     @utils.synchronized('dhcp-agent')
-    def port_delete_end(self, context, payload):
+    def port_delete_end(self, req=None, **kwargs):
         """Handle the port.delete.end notification event."""
+        payload = json.loads(req.body)
         port = self.cache.get_port_by_id(payload['port_id'])
         if port:
             network = self.cache.get_network_by_id(port.network_id)
