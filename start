@@ -1,0 +1,1 @@
+./nspdhcpagent.py   --config-dir  etc/ --config-file  etc/neutron.conf --config-file etc/dhcp_agent.ini
