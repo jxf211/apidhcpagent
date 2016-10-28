@@ -16,6 +16,8 @@ from nspagent.dhcp import config as dhcp_config
 from oslo_log import log as logging
 from server import Server
 from router import API
+from nspagent.dhcp.linux import daemon
+
 LOG = logging.getLogger(__name__)
 
 def daemonize(stdin='/dev/null', stdout='/dev/null', stderr='/dev/null'):
@@ -72,7 +74,44 @@ def register_options():
 def sigterm_handler(signal, frame):
         sys.exit(0)
 
+class DeamonMain(daemon.Daemon):
+    def __init__(self, ip, port):
+        self.register_options()
+        common_config.init(sys.argv[1:])
+        config.setup_logging()
+        self._ip = ip
+        self._port = port
+        super(DeamonMain, self).__init__('/var/dhcp/pid')
+
+    def run(self):
+        super(DeamonMain, self).run()
+        signal.signal(signal.SIGTERM, sigterm_handler)
+        LOG.info('Launching DhcpAgent API Stack (DHCP_AGENT) ...')
+        try:
+            LOG.info('Gevent approaching ... server ip:%s port:%s',
+                        self._ip, self._port)
+            app = API()
+            server = Server(app, host=self._ip, port=self._port)
+            server.start()
+            server.wait()
+        except Exception as e:
+            LOG.error('Exception: %s' % e)
+            LOG.error('%s' % traceback.format_exc())
+            sys.exit(1)
+
+    def register_options():
+        config.register_interface_driver_opts_helper(cfg.CONF)
+        config.register_use_namespaces_opts_helper(cfg.CONF)
+        config.register_agent_state_opts_helper(cfg.CONF)
+        cfg.CONF.register_opts(dhcp_config.DHCP_AGENT_OPTS)
+        cfg.CONF.register_opts(dhcp_config.DHCP_OPTS)
+        cfg.CONF.register_opts(dhcp_config.DNSMASQ_OPTS)
+        cfg.CONF.register_opts(interface.OPTS)
+
 if __name__== '__main__':
+    main = DeamonMain("192.168.49.22", "20010")
+    main.start()
+'''
     register_options()
     common_config.init(sys.argv[1:])
     config.setup_logging()
@@ -103,4 +142,4 @@ if __name__== '__main__':
         LOG.error('Exception: %s' % e)
         LOG.error('%s' % traceback.format_exc())
         sys.exit(1)
-
+'''

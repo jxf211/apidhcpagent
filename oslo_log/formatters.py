@@ -16,13 +16,13 @@ import logging.config
 import logging.handlers
 import sys
 import traceback
-
+import threading
 import six
 from six import moves
 
-from oslo_context import context as context_utils
 from oslo_serialization import jsonutils
 
+_request_store = threading.local()
 
 def _dictify_context(context):
     if context is None:
@@ -41,6 +41,12 @@ def _store_global_conf(conf):
     global _CONF
     _CONF = conf
 
+def get_current():
+    """Return this thread's current context
+
+    If no context is set, returns None
+    """
+    return getattr(_request_store, 'context', None)
 
 def _update_record_with_context(record):
     """Given a log record, update it with context information.
@@ -51,7 +57,7 @@ def _update_record_with_context(record):
     """
     context = record.__dict__.get(
         'context',
-        context_utils.get_current()
+        get_current()
     )
     d = _dictify_context(context)
     # Copy the context values directly onto the record so they can be
