@@ -22,7 +22,6 @@ from oslo_utils import excutils
 
 from nspagent.dhcpcommon import utils
 from nspagent.ovsdb import api as ovsdb
-#from neutron.i18n import _LE
 
 LOG = logging.getLogger(__name__)
 

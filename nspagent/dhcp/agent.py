@@ -16,30 +16,22 @@
 
 import collections
 import os
-
 import eventlet
 import json
 from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_utils import importutils
-
 from linux import dhcp
 from linux import external_process
 from linux import utils as linux_utils
-#from metadata import driver as metadata_driver
-#from nspagent import rpc as agent_rpc
 from common import constants
 from common import exceptions
-#from common import rpc as n_rpc
 from common import topics
 from common import utils
-#import context
 # import manager
 #from common import loopingcall
-# import oslo_messaging
 
 LOG = logging.getLogger(__name__)
-
 
 class DhcpAgent(object):
     """DHCP agent service manager.
@@ -125,6 +117,7 @@ class DhcpAgent(object):
                             'still exist.'),
                         {'net_id': network.id, 'action': action})
         except Exception as e:
+            LOG.error("enable dhcp err:%s", e)
             if getattr(e, 'exc_type', '') != 'IpAddressGenerationFailure':
                 # Don't resync if port could not be created because of an IP
                 # allocation failure. When the subnet is updated with a new
@@ -214,9 +207,12 @@ class DhcpAgent(object):
         if network_rs:
             network = dhcp.NetModel(self.conf.use_namespaces, network_rs)
         else:
-            LOG.err("payload no network_id")
-            network = self.safe_get_network_info(network_id)
+            LOG.err("payload resource no network_id")
+            #network = self.safe_get_network_info(network_id)
         if network:
+            #pool = eventlet.GreenPool(cfg.CONF.num_sync_threads)
+            #pool.spawn(self.safe_configure_dhcp_for_network, network)
+
             self.configure_dhcp_for_network(network)
 
     @utils.exception_logger()
@@ -242,12 +238,6 @@ class DhcpAgent(object):
                     self.cache.put(network)
                 break
 
-        if enable_metadata and dhcp_network_enabled:
-            for subnet in network.subnets:
-                if subnet.ip_version == 4 and subnet.enable_dhcp:
-                    self.enable_isolated_metadata_proxy(network)
-                    break
-
     def disable_dhcp_helper(self, network_id):
         """Disable DHCP for a network known to the agent."""
         network = self.cache.get_network_by_id(network_id)
@@ -262,7 +252,7 @@ class DhcpAgent(object):
             if self.call_driver('disable', network):
                 self.cache.remove(network)
 
-    def refresh_dhcp_helper(self, network_id):
+    def refresh_dhcp_helper(self, network_id, network_rs=None):
         """Refresh or disable DHCP for a network depending on the current state
         of the network.
         """
@@ -289,20 +279,25 @@ class DhcpAgent(object):
     @utils.synchronized('dhcp-agent')
     def network_create_end(self, req=None, **kwargs):
         """Handle the network.create.end notification event."""
-        payload = json.loads(req.body)
-        LOG.debug("payload :%s", payload)
-        network_id = payload['network']['id']
-        network = payload['network']
-        self.enable_dhcp_helper(network_id, network)
-        return 200, "OK"
+        try:
+            payload = json.loads(req.body)
+            LOG.debug("payload :%s", payload)
+            network_id = payload['network']['id']
+            network = payload['network']
+            self.enable_dhcp_helper(network_id, network)
+            return 200, "OK"
+        except Exception as e:
+            LOG.error(str(e))
+            return 500, str(e)
 
     @utils.synchronized('dhcp-agent')
     def network_update_end(self, req=None, **kwargs):
         """Handle the network.update.end notification event."""
         payload = json.loads(req.body)
         network_id = payload['network']['id']
+        network = payload['network']
         if payload['network']['admin_state_up']:
-            self.enable_dhcp_helper(network_id)
+            self.enable_dhcp_helper(network_id, network)
         else:
             self.disable_dhcp_helper(network_id)
 
@@ -317,7 +312,8 @@ class DhcpAgent(object):
         """Handle the subnet.update.end notification event."""
         payload = json.loads(req.body)
         network_id = payload['subnet']['network_id']
-        self.refresh_dhcp_helper(network_id)
+        network = payload['network']
+        self.refresh_dhcp_helper(network_id, network)
 
     # Use the update handler for the subnet create event.
     subnet_create_end = subnet_update_end
@@ -327,9 +323,10 @@ class DhcpAgent(object):
         """Handle the subnet.delete.end notification event."""
         payload = json.loads(req.body)
         subnet_id = payload['subnet_id']
-        network = self.cache.get_network_by_subnet_id(subnet_id)
+        #network = self.cache.get_network_by_subnet_id(subnet_id)
+        network = payload['network']
         if network:
-            self.refresh_dhcp_helper(network.id)
+            self.refresh_dhcp_helper(network.id, network)
 
     @utils.synchronized('dhcp-agent')
     def port_update_end(self, req=None, **kwargs):
@@ -367,37 +364,6 @@ class DhcpAgent(object):
             self.cache.remove_port(port)
             self.call_driver('reload_allocations', network)
 
-    def enable_isolated_metadata_proxy(self, network):
-
-        # The proxy might work for either a single network
-        # or all the networks connected via a router
-        # to the one passed as a parameter
-        kwargs = {'network_id': network.id}
-        # When the metadata network is enabled, the proxy might
-        # be started for the router attached to the network
-        if self.conf.enable_metadata_network:
-            router_ports = [port for port in network.ports
-                            if (port.device_owner in
-                                constants.ROUTER_INTERFACE_OWNERS)]
-            if router_ports:
-                # Multiple router ports should not be allowed
-                if len(router_ports) > 1:
-                    LOG.warning(("%(port_num)d router ports found on the "
-                                    "metadata access network. Only the port "
-                                    "%(port_id)s, for router %(router_id)s "
-                                    "will be considered"),
-                                {'port_num': len(router_ports),
-                                 'port_id': router_ports[0].id,
-                                 'router_id': router_ports[0].device_id})
-                kwargs = {'router_id': router_ports[0].device_id}
-
-        metadata_driver.MetadataDriver.spawn_monitored_metadata_proxy(
-            self._process_monitor, network.namespace, dhcp.METADATA_PORT,
-            self.conf, **kwargs)
-
-    def disable_isolated_metadata_proxy(self, network):
-        metadata_driver.MetadataDriver.destroy_monitored_metadata_proxy(
-            self._process_monitor, network.id, network.namespace, self.conf)
 '''
 class DhcpPluginApi(object):
     """Agent side of the dhcp rpc API.

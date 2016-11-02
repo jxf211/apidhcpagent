@@ -7,6 +7,7 @@ import os
 import signal
 import sys
 import traceback
+import logging as syslog
 from oslo_config import cfg
 from utils import get_ip_address
 from common import config as common_config
@@ -20,7 +21,15 @@ from nspagent.dhcp.linux import daemon
 
 LOG = logging.getLogger(__name__)
 
+common_cli_opts = [
+    cfg.BoolOpt('daemon',
+                short='m',
+                default=False,
+                help='run in background'),
+    ]
+
 def register_options():
+    cfg.CONF.register_cli_opts(common_cli_opts)
     config.register_interface_driver_opts_helper(cfg.CONF)
     config.register_use_namespaces_opts_helper(cfg.CONF)
     config.register_agent_state_opts_helper(cfg.CONF)
@@ -36,9 +45,9 @@ def sigterm_handler(signal, frame):
 
 class DeamonMain(daemon.Daemon):
     def __init__(self, ip, port):
-        self.register_options()
-        common_config.init(sys.argv[1:])
-        config.setup_logging()
+        #self.register_options()
+        #common_config.init(sys.argv[1:])
+        #config.setup_logging()
         self._ip = ip
         self._port = port
         super(DeamonMain, self).__init__('/var/dhcp/pid')
@@ -59,7 +68,7 @@ class DeamonMain(daemon.Daemon):
             LOG.error('%s' % traceback.format_exc())
             sys.exit(1)
 
-    def register_options():
+    def register_options(self):
         config.register_interface_driver_opts_helper(cfg.CONF)
         config.register_use_namespaces_opts_helper(cfg.CONF)
         config.register_agent_state_opts_helper(cfg.CONF)
@@ -69,27 +78,29 @@ class DeamonMain(daemon.Daemon):
         cfg.CONF.register_opts(interface.OPTS)
 
 if __name__== '__main__':
-    main = DeamonMain("192.168.49.22", "20010")
-    main.start()
-'''
     register_options()
     common_config.init(sys.argv[1:])
     config.setup_logging()
+    LOG.debug('Full set of CONF:')
+    cfg.CONF.log_opt_values(LOG, syslog.DEBUG)
+    if cfg.CONF.daemon:
+        main = DeamonMain("192.168.49.22", "20010")
+        main.start()
+    else :
+        signal.signal(signal.SIGTERM, sigterm_handler)
 
-    signal.signal(signal.SIGTERM, sigterm_handler)
+        LOG.info('Launching DhcpAgent API Stack (DHCP_AGENT) ...')
 
-    LOG.info('Launching DhcpAgent API Stack (DHCP_AGENT) ...')
+        #local_ctrl_ip = get_ip_address("nspbr0")
+        local_ctrl_ip = "192.168.49.22"
+        try:
+            LOG.info('Gevent approaching ... server ip:%s', local_ctrl_ip)
+            app = API()
+            server = Server(app, host=local_ctrl_ip , port="20010")
+            server.start()
+            server.wait()
+        except Exception as e:
+            LOG.error('Exception: %s' % e)
+            LOG.error('%s' % traceback.format_exc())
+            sys.exit(1)
 
-    #local_ctrl_ip = get_ip_address("nspbr0")
-    local_ctrl_ip = "192.168.49.22"
-    try:
-        LOG.info('Gevent approaching ... server ip:%s', local_ctrl_ip)
-        app = API()
-        server = Server(app, host=local_ctrl_ip , port="20010")
-        server.start()
-        server.wait()
-    except Exception as e:
-        LOG.error('Exception: %s' % e)
-        LOG.error('%s' % traceback.format_exc())
-        sys.exit(1)
-'''

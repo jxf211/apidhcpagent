@@ -265,11 +265,7 @@ class OVSInterfaceDriver(LinuxInterfaceDriver):
             ns_dev.link.set_up()
             if self.conf.ovs_use_veth:
                 root_dev.link.set_up()
-            ovs = ovs_lib.BaseOVS()
-            ovs.set_db_attribute('Port', device_name, 'tag', 1020)
         else:
-            ovs = ovs_lib.BaseOVS()
-            ovs.set_db_attribute('Port', device_name, 'tag', 1020)
             LOG.info(("Device %s already exists"), device_name)
 
     def unplug(self, device_name, bridge=None, namespace=None, prefix=None):

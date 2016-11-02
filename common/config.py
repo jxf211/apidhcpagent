@@ -41,42 +41,42 @@ core_opts = [
                help=("The host IP to bind to")),
     cfg.IntOpt('bind_port', default=9696,
                help=("The port to bind to")),
-    cfg.StrOpt('api_paste_config', default="api-paste.ini",
-               help=("The API paste config file to use")),
-    cfg.StrOpt('api_extensions_path', default="",
-               help=("The path for API extensions")),
-    cfg.StrOpt('auth_strategy', default='keystone',
-               help=("The type of authentication to use")),
-    cfg.StrOpt('core_plugin',
-               help=("The core plugin Neutron will use")),
-    cfg.ListOpt('service_plugins', default=[],
-                help=("The service plugins Neutron will use")),
+#    cfg.StrOpt('api_paste_config', default="api-paste.ini",
+#               help=("The API paste config file to use")),
+#    cfg.StrOpt('api_extensions_path', default="",
+#               help=("The path for API extensions")),
+#    cfg.StrOpt('auth_strategy', default='keystone',
+#               help=("The type of authentication to use")),
+#    cfg.StrOpt('core_plugin',
+#               help=("The core plugin Neutron will use")),
+#    cfg.ListOpt('service_plugins', default=[],
+#                help=("The service plugins Neutron will use")),
     cfg.StrOpt('base_mac', default="fa:16:3e:00:00:00",
                help=("The base MAC address Neutron will use for VIFs")),
-    cfg.IntOpt('mac_generation_retries', default=16,
-               help=("How many times Neutron will retry MAC generation")),
-    cfg.BoolOpt('allow_bulk', default=True,
-                help=("Allow the usage of the bulk API")),
-    cfg.BoolOpt('allow_pagination', default=False,
-                help=("Allow the usage of the pagination")),
-    cfg.BoolOpt('allow_sorting', default=False,
-                help=("Allow the usage of the sorting")),
-    cfg.StrOpt('pagination_max_limit', default="-1",
-               help=("The maximum number of items returned in a single "
-                      "response, value was 'infinite' or negative integer "
-                      "means no limit")),
-    cfg.IntOpt('max_dns_nameservers', default=5,
-               help=("Maximum number of DNS nameservers")),
-    cfg.IntOpt('max_subnet_host_routes', default=20,
-               help=("Maximum number of host routes per subnet")),
-    cfg.IntOpt('max_fixed_ips_per_port', default=5,
-               help=("Maximum number of fixed ips per port")),
-    cfg.StrOpt('default_ipv4_subnet_pool', default=None,
-               help=("Default IPv4 subnet-pool to be used for automatic "
-                      "subnet CIDR allocation")),
-    cfg.StrOpt('default_ipv6_subnet_pool', default=None,
-               help=("Default IPv6 subnet-pool to be used for automatic "
-                      "subnet CIDR allocation")),
+#    cfg.IntOpt('mac_generation_retries', default=16,
+#               help=("How many times Neutron will retry MAC generation")),
+#    cfg.BoolOpt('allow_bulk', default=True,
+#                help=("Allow the usage of the bulk API")),
+#    cfg.BoolOpt('allow_pagination', default=False,
+#                help=("Allow the usage of the pagination")),
+#    cfg.BoolOpt('allow_sorting', default=False,
+#                help=("Allow the usage of the sorting")),
+#    cfg.StrOpt('pagination_max_limit', default="-1",
+#               help=("The maximum number of items returned in a single "
+#                      "response, value was 'infinite' or negative integer "
+#                      "means no limit")),
+#    cfg.IntOpt('max_dns_nameservers', default=5,
+#               help=("Maximum number of DNS nameservers")),
+#    cfg.IntOpt('max_subnet_host_routes', default=20,
+#               help=("Maximum number of host routes per subnet")),
+#    cfg.IntOpt('max_fixed_ips_per_port', default=5,
+#               help=("Maximum number of fixed ips per port")),
+#    cfg.StrOpt('default_ipv4_subnet_pool', default=None,
+#               help=("Default IPv4 subnet-pool to be used for automatic "
+#                      "subnet CIDR allocation")),
+#   cfg.StrOpt('default_ipv6_subnet_pool', default=None,
+#               help=("Default IPv6 subnet-pool to be used for automatic "
+#                      "subnet CIDR allocation")),
     cfg.IntOpt('dhcp_lease_duration', default=86400,
                deprecated_name='dhcp_lease_time',
                help=("DHCP lease duration (in seconds). Use -1 to tell "
@@ -84,49 +84,49 @@ core_opts = [
     cfg.BoolOpt('dhcp_agent_notification', default=True,
                 help=("Allow sending resource operation"
                        " notification to DHCP agent")),
-    cfg.BoolOpt('allow_overlapping_ips', default=False,
-                help=("Allow overlapping IP support in Neutron")),
+#    cfg.BoolOpt('allow_overlapping_ips', default=False,
+#                help=("Allow overlapping IP support in Neutron")),
     cfg.StrOpt('host', default=utils.get_hostname(),
                help=("Hostname to be used by the neutron server, agents and "
                       "services running on this machine. All the agents and "
                       "services running on this machine must use the same "
                       "host value.")),
-    cfg.BoolOpt('force_gateway_on_subnet', default=True,
-                help=("Ensure that configured gateway is on subnet. "
-                       "For IPv6, validate only if gateway is not a link "
-                       "local address. Deprecated, to be removed during the "
-                       "K release, at which point the check will be "
-                       "mandatory.")),
-    cfg.BoolOpt('notify_nova_on_port_status_changes', default=True,
-                help=("Send notification to nova when port status changes")),
-    cfg.BoolOpt('notify_nova_on_port_data_changes', default=True,
-                help=("Send notification to nova when port data (fixed_ips/"
-                       "floatingip) changes so nova can update its cache.")),
-    cfg.StrOpt('nova_url',
-               default='http://127.0.0.1:8774/v2',
-               help=('URL for connection to nova. '
-                      'Deprecated in favour of an auth plugin in [nova].')),
-    cfg.StrOpt('nova_admin_username',
-               help=('Username for connecting to nova in admin context. '
-                      'Deprecated in favour of an auth plugin in [nova].')),
-    cfg.StrOpt('nova_admin_password',
-               help=('Password for connection to nova in admin context. '
-                      'Deprecated in favour of an auth plugin in [nova].'),
-               secret=True),
-    cfg.StrOpt('nova_admin_tenant_id',
-               help=('The uuid of the admin nova tenant. '
-                      'Deprecated in favour of an auth plugin in [nova].')),
-    cfg.StrOpt('nova_admin_tenant_name',
-               help=('The name of the admin nova tenant. '
-                      'Deprecated in favour of an auth plugin in [nova].')),
-    cfg.StrOpt('nova_admin_auth_url',
-               default='http://localhost:5000/v2.0',
-               help=('Authorization URL for connecting to nova in admin '
-                      'context. '
-                      'Deprecated in favour of an auth plugin in [nova].')),
-    cfg.IntOpt('send_events_interval', default=2,
-               help=('Number of seconds between sending events to nova if '
-                      'there are any events to send.')),
+#    cfg.BoolOpt('force_gateway_on_subnet', default=True,
+#                help=("Ensure that configured gateway is on subnet. "
+#                       "For IPv6, validate only if gateway is not a link "
+#                       "local address. Deprecated, to be removed during the "
+#                       "K release, at which point the check will be "
+#                       "mandatory.")),
+#   cfg.BoolOpt('notify_nova_on_port_status_changes', default=True,
+#                help=("Send notification to nova when port status changes")),
+#    cfg.BoolOpt('notify_nova_on_port_data_changes', default=True,
+#                help=("Send notification to nova when port data (fixed_ips/"
+#                       "floatingip) changes so nova can update its cache.")),
+#    cfg.StrOpt('nova_url',
+#               default='http://127.0.0.1:8774/v2',
+#               help=('URL for connection to nova. '
+#                      'Deprecated in favour of an auth plugin in [nova].')),
+#    cfg.StrOpt('nova_admin_username',
+#               help=('Username for connecting to nova in admin context. '
+#                      'Deprecated in favour of an auth plugin in [nova].')),
+#    cfg.StrOpt('nova_admin_password',
+#               help=('Password for connection to nova in admin context. '
+#                      'Deprecated in favour of an auth plugin in [nova].'),
+#               secret=True),
+#    cfg.StrOpt('nova_admin_tenant_id',
+#               help=('The uuid of the admin nova tenant. '
+#                      'Deprecated in favour of an auth plugin in [nova].')),
+#    cfg.StrOpt('nova_admin_tenant_name',
+#               help=('The name of the admin nova tenant. '
+#                      'Deprecated in favour of an auth plugin in [nova].')),
+#   cfg.StrOpt('nova_admin_auth_url',
+#               default='http://localhost:5000/v2.0',
+#               help=('Authorization URL for connecting to nova in admin '
+#                      'context. '
+#                      'Deprecated in favour of an auth plugin in [nova].')),
+#    cfg.IntOpt('send_events_interval', default=2,
+#               help=('Number of seconds between sending events to nova if '
+#                      'there are any events to send.')),
     cfg.BoolOpt('advertise_mtu', default=False,
                 help=('If True, effort is made to advertise MTU settings '
                        'to VMs via network methods (DHCP and RA MTU options) '

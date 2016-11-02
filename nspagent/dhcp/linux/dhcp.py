@@ -23,9 +23,9 @@ import time
 import netaddr
 from oslo_config import cfg
 from oslo_log import log as logging
-from oslo_utils import importutils
+from oslo_utils import importutils, excutils
 import six
-
+from nspagent.dhcpcommon import ovs_lib
 import external_process
 import ip_lib
 import iptables_manager
@@ -588,6 +588,7 @@ class Dnsmasq(DhcpLocalProcess):
         # avoid potential performance drop when lots of hosts are dumped
         for host_tuple in self._iter_hosts():
             port, alloc, hostname, name, no_dhcp, no_opts = host_tuple
+            LOG.debug("host_tuple:%s", host_tuple)
             if no_dhcp:
                 if not no_opts and getattr(port, 'extra_dhcp_opts', False):
                     buf.write('%s,%s%s\n' %
@@ -670,6 +671,7 @@ class Dnsmasq(DhcpLocalProcess):
             subnet_to_interface_ip = self._make_subnet_interface_ip_map()
         isolated_subnets = self.get_isolated_subnets(self.network)
         for i, subnet in enumerate(self.network.subnets):
+            LOG.debug("subnet:%s", subnet)
             addr_mode = getattr(subnet, 'ipv6_address_mode', None)
             if (not subnet.enable_dhcp or
                 (subnet.ip_version == 6 and
@@ -694,6 +696,7 @@ class Dnsmasq(DhcpLocalProcess):
             gateway = subnet.gateway_ip
             host_routes = []
             for hr in subnet.host_routes:
+                LOG.debug("subnet.host_routes:%s", hr)
                 if hr.destination == constants.IPv4_ANY:
                     if not gateway:
                         gateway = hr.nexthop
@@ -717,6 +720,7 @@ class Dnsmasq(DhcpLocalProcess):
                                         s.cidr != subnet.cidr)])
 
                 if host_routes:
+                    LOG.debug("host_routes:%s", host_routes)
                     if gateway:
                         host_routes.append("%s,%s" % (constants.IPv4_ANY,
                                                       gateway))
@@ -730,6 +734,7 @@ class Dnsmasq(DhcpLocalProcess):
                                             ','.join(host_routes)))
 
                 if gateway:
+                    LOG.debug("gateway:%s", gateway)
                     options.append(self._format_option(subnet.ip_version,
                                                        i, 'router',
                                                        gateway))
@@ -921,8 +926,9 @@ class DeviceManager(object):
         LOG.debug("gateway:%s", gateway)
         if gateway:
             gateway = gateway['gateway']
-
+        LOG.debug("network:%s", network)
         for subnet in network.subnets:
+            LOG.debug("subnet :%s", subnet)
             skip_subnet = (
                 subnet.ip_version != 4
                 or not subnet.enable_dhcp
@@ -987,6 +993,8 @@ class DeviceManager(object):
                         raise exceptions.Conflict()
                 else:
                     dhcp_port = port
+                    network.ports.remove(port)
+
                 # break since we found port that matches device_id
                 break
 
@@ -1060,7 +1068,7 @@ class DeviceManager(object):
 		u'mac_address': u'fa:16:3e:65:29:22',
 		}
         '''
-        dhcp_port = DictModel(port)
+        dhcp_port = DictModel(dhcp_port)
         if not dhcp_port:
             raise exceptions.Conflict()
 
@@ -1080,14 +1088,14 @@ class DeviceManager(object):
         """Create and initialize a device for network's DHCP on this host."""
         port = self.setup_dhcp_port(network)
         interface_name = self.get_interface_name(network, port)
-        tag = network.vlantag
+        tag = network.get("vlantag", None)
         LOG.debug("port :%s", port)
         if ip_lib.ensure_device_is_ready(interface_name,
                                          namespace=network.namespace):
             LOG.debug('Reusing existing device: %s.', interface_name)
-            from nspagent.dhcpcommon import ovs_lib
-            ovs = ovs_lib.BaseOVS()
-            ovs.set_db_attribute('Port', interface_name, 'tag', tag)
+            #from nspagent.dhcpcommon import ovs_lib
+            #ovs = ovs_lib.BaseOVS()
+            #ovs.set_db_attribute('Port', interface_name, 'tag', tag)
         else:
             LOG.debug("Reusing not existing device:%s", interface_name)
             self.driver.plug(network.id,
@@ -1096,6 +1104,10 @@ class DeviceManager(object):
                              port.mac_address,
                              namespace=network.namespace)
             self.fill_dhcp_udp_checksums(namespace=network.namespace)
+
+        if tag:
+            self.set_tag(interface_name, tag)
+
         ip_cidrs = []
         for fixed_ip in port.fixed_ips:
             LOG.debug("fixed_ip.subnet:%s", fixed_ip.subnet)
@@ -1145,3 +1157,38 @@ class DeviceManager(object):
                      % constants.DHCP_RESPONSE_PORT)
         iptables_mgr.ipv4['mangle'].add_rule('POSTROUTING', ipv4_rule)
         iptables_mgr.apply()
+
+    def ensure_vlan(self, physical_interface, vlan_id):
+        interface = self.get_subinterface_name(physical_interface, vlan_id)
+        if not ip_lib.device_exists(interface):
+            LOG.debug("Creating subinterface %(interface)s for "
+                      "VLAN %(vlan_id)s on interface "
+                      "%(physical_interface)s",
+                      {'interface': interface, 'vlan_id': vlan_id,
+                       'physical_interface': physical_interface})
+            try:
+                ip = ip_lib.IPWrapper()
+                int_vlan = ip.add_vlan(interface, physical_interface,
+                                    vlan_id)
+            except RuntimeError:
+                with excutils.save_and_reraise_exception() as ctxt:
+                    if ip_lib.vlan_in_use(vlan_id):
+                        ctxt.reraise = False
+                        LOG.error(("Unable to create VLAN interface for "
+                                   "VLAN ID %s because it is in use by "
+                                   "another interface."), vlan_id)
+            int_vlan.disable_ipv6()
+            int_vlan.link.set_up()
+            LOG.debug("Done creating subinterface %s", interface)
+        return interface
+
+    def get_subinterface_name(self, physical_interface, vlan_id):
+        if not vlan_id:
+            LOG.warning(("Invalid VLAN ID, will lead to incorrect "
+                            "subinterface name"))
+        subinterface_name = '%s.%s' % (physical_interface, vlan_id)
+        return subinterface_name
+
+    def set_tag(self, interface_name, tag):
+        ovs = ovs_lib.BaseOVS()
+        ovs.set_db_attribute('Port', interface_name, 'tag', tag)

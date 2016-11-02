@@ -30,7 +30,7 @@ else:
     patched_socket = (eventlet.patcher.is_monkey_patched('socket') or
                       os.environ.get('TEST_EVENTLET', False))
 
-import jsonrpc
+#import jsonrpc
 
 
 # Copyright (c) 2014 Mirantis Inc.
@@ -63,7 +63,7 @@ LOG = logging.getLogger(__name__)
 # Since multiprocessing supports only pickle and xmlrpclib for serialization of
 # RPC requests and responses, we declare another 'jsonrpc' serializer
 
-managers.listener_client['jsonrpc'] = jsonrpc.JsonListener, jsonrpc.JsonClient
+#managers.listener_client['jsonrpc'] = jsonrpc.JsonListener, jsonrpc.JsonClient
 
 
 class RootwrapClass(object):
@@ -87,7 +87,7 @@ class RootwrapClass(object):
         # Suicide to force break of the main thread
         os.kill(os.getpid(), signal.SIGINT)
 
-
+'''
 def get_manager_class(config=None, filters=None):
     class RootwrapManager(managers.BaseManager):
         def __init__(self, address=None, authkey=None):
@@ -102,7 +102,6 @@ def get_manager_class(config=None, filters=None):
         RootwrapManager.register('rootwrap')
 
     return RootwrapManager
-
 
 def daemon_start(config, filters):
     temp_dir = tempfile.mkdtemp(prefix='rootwrap-')
@@ -175,7 +174,6 @@ def daemon_stop(server, signal, frame):
         raise KeyboardInterrupt
 
 
-
 if patched_socket:
     # We have to use slow version of recvall with eventlet because of a bug in
     # GreenSocket.recv_into:
@@ -193,7 +191,6 @@ except AttributeError:
 
 ClientManager = get_manager_class()
 LOG = logging.getLogger(__name__)
-
 
 class Client(object):
     def __init__(self, rootwrap_daemon_cmd):
@@ -285,3 +282,4 @@ class Client(object):
             proxy = self._restart(proxy)
             res = proxy.run_one_command(cmd, stdin)
         return res
+'''
