@@ -25,7 +25,6 @@ from oslo_log import log as logging
 from nspagent.dhcpcommon import config as agent_cfg
 import ip_lib
 import utils
-#from neutron.i18n import _LE
 from common import fileutils
 
 LOG = logging.getLogger(__name__)

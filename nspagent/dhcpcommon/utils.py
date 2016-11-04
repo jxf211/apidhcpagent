@@ -14,11 +14,6 @@
 #    under the License.
 
 import os
-
-
-if os.name == 'nt':
-    from neutron.agent.windows import utils
-else:
-    from nspagent.dhcp.linux import utils
+from nspagent.dhcp.linux import utils
 
 execute = utils.execute

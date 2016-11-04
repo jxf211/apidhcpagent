@@ -67,7 +67,6 @@ def call_system_sh(args):
         log.error(output)
     return (rc, output)
 
-
 def validate_json_obj_list(obj_cls):
     def validate_obj(func):
         def __decorator(request_data, **obj_id):

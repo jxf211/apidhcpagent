@@ -20,7 +20,6 @@ import six
 
 interface_map = {
     'vsctl': 'nspagent.ovsdb.impl_vsctl.OvsdbVsctl',
-    'native': 'nspagent.ovsdb.impl_idl.OvsdbIdl',
 }
 
 OPTS = [

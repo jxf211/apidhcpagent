@@ -999,7 +999,6 @@ class DeviceManager(object):
                 break
 
         # check for a reserved DHCP port\
-        dhcp_port = None
         if dhcp_port is None:
             LOG.debug('DHCP port %(device_id)s on network %(network_id)s'
                       ' does not yet exist. Checking for a reserved port.',
