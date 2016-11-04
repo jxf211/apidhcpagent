@@ -2,5 +2,5 @@
 
 ./nspdhcpagent.py --config-file  /etc/dhcpagent/neutron.conf \
 --config-file /etc/dhcpagent/dhcp_agent.ini \
---log-file /var/log/neutron/nsp-dhcp-agent.log
-
+--log-file /var/log/neutron/nspdhcpagent.log 
+#-m

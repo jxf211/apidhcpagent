@@ -28,33 +28,23 @@ common_cli_opts = [
                 help='run in background'),
     ]
 
-def register_options():
-    cfg.CONF.register_cli_opts(common_cli_opts)
-    config.register_interface_driver_opts_helper(cfg.CONF)
-    config.register_use_namespaces_opts_helper(cfg.CONF)
-    config.register_agent_state_opts_helper(cfg.CONF)
-    cfg.CONF.register_opts(dhcp_config.DHCP_AGENT_OPTS)
-    cfg.CONF.register_opts(dhcp_config.DHCP_OPTS)
-    cfg.CONF.register_opts(dhcp_config.DNSMASQ_OPTS)
-    #cfg.CONF.register_opts(metadata_config.DRIVER_OPTS)
-    #cfg.CONF.register_opts(metadata_config.SHARED_OPTS)
-    cfg.CONF.register_opts(interface.OPTS)
-
-def sigterm_handler(signal, frame):
-        sys.exit(0)
-
 class DeamonMain(daemon.Daemon):
-    def __init__(self, ip, port):
-        #self.register_options()
-        #common_config.init(sys.argv[1:])
-        #config.setup_logging()
+    def __init__(self, ip, port, pid_file):
+        self.register_options()
+        common_config.init(sys.argv[1:])
+        config.setup_logging()
+        LOG.debug('Full set of CONF:')
+        cfg.CONF.log_opt_values(LOG, syslog.DEBUG)
         self._ip = ip
         self._port = port
-        super(DeamonMain, self).__init__('/var/dhcp/pid')
+        super(DeamonMain, self).__init__(pid_file)
+
+    def sigterm_handler(signal, frame):
+            sys.exit(0)
 
     def run(self):
-        super(DeamonMain, self).run()
-        signal.signal(signal.SIGTERM, sigterm_handler)
+        #super(DeamonMain, selif).run()
+        signal.signal(signal.SIGTERM, self.sigterm_handler)
         LOG.info('Launching DhcpAgent API Stack (DHCP_AGENT) ...')
         try:
             LOG.info('Gevent approaching ... server ip:%s port:%s',
@@ -76,31 +66,12 @@ class DeamonMain(daemon.Daemon):
         cfg.CONF.register_opts(dhcp_config.DHCP_OPTS)
         cfg.CONF.register_opts(dhcp_config.DNSMASQ_OPTS)
         cfg.CONF.register_opts(interface.OPTS)
+        cfg.CONF.register_cli_opts(common_cli_opts)
 
 if __name__== '__main__':
-    register_options()
-    common_config.init(sys.argv[1:])
-    config.setup_logging()
-    LOG.debug('Full set of CONF:')
-    cfg.CONF.log_opt_values(LOG, syslog.DEBUG)
+    main = DeamonMain("192.168.49.22", "20010", '/var/dhcpagent/pid')
     if cfg.CONF.daemon:
-        main = DeamonMain("192.168.49.22", "20010")
         main.start()
     else :
-        signal.signal(signal.SIGTERM, sigterm_handler)
-
-        LOG.info('Launching DhcpAgent API Stack (DHCP_AGENT) ...')
-
-        #local_ctrl_ip = get_ip_address("nspbr0")
-        local_ctrl_ip = "192.168.49.22"
-        try:
-            LOG.info('Gevent approaching ... server ip:%s', local_ctrl_ip)
-            app = API()
-            server = Server(app, host=local_ctrl_ip , port="20010")
-            server.start()
-            server.wait()
-        except Exception as e:
-            LOG.error('Exception: %s' % e)
-            LOG.error('%s' % traceback.format_exc())
-            sys.exit(1)
+        main.run()
 
