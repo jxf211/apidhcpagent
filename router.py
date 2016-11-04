@@ -136,8 +136,7 @@ class Resource(object):
             raise
         except Exception as err:
             log.error(err)
-            render_response(err, HTTP_INTERNAL_SERVER_ERROR)
-            raise Exception("Error: %s" % err)
+            return render_response(err, HTTP_INTERNAL_SERVER_ERROR)
 
         try:
             serializer = self.serializer
@@ -152,8 +151,7 @@ class Resource(object):
             return response
         except Exception as err:
             log.error(err)
-            render_response(err, HTTP_INTERNAL_SERVER_ERROR)
-            raise Exception("Error:%s", err)
+            return render_response(err, HTTP_INTERNAL_SERVER_ERROR)
 
     def dispatch(self, obj, action, *args, **kwargs):
         """Find action-specific method on self and call it."""

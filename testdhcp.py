@@ -148,10 +148,10 @@ network = { "id": "44783e1a-63fe-43d5-9989-e1515c24eecd",
                                     ],
                             u'id': u'712a2c63-e610-42c9-9ab3-4e8b6540d125',
                             u'security_groups': [],
-                            u'device_id': u'dhcp7158f5e3-aca8-5d53-8238-314bac7fc59f-44783e1a-63fe-43d5-9989-e1515c24eecd',
+                            u'device_id': u'dhcp44783e1a-63fe-43d5-9989-e1515c24eecd',
                             u'name': u'',
                             u'admin_state_up': True,
-                            #u'network_id': u'1111bc3d-400a-48a0-9186-bf59f7f94b05',
+                            u'network_id': u'1111bc3d-400a-48a0-9186-bf59f7f94b05',
                             u'tenant_id': u'befa06e66e8047a1929a3912fff2c591',
                             u'binding:vif_details': {u'port_filter': True},
                             u'binding:vnic_type': u'normal',
@@ -162,7 +162,8 @@ network = { "id": "44783e1a-63fe-43d5-9989-e1515c24eecd",
                         ],
         "admin_state_up":True,
         "vlantag":1010,
-        "tenant_id":"befa06e66e8047a1929a3912fff2c591"}
+        "tenant_id":"befa06e66e8047a1929a3912fff2c591"
+        }
 
 network_data = {"network": network }
 
@@ -173,16 +174,12 @@ def create_net_work():
         payload = json.dumps(network_data)
         r = requests.post(url, payload, headers = headers, verify=False)
         print r
+        print r.text, r.tatus_code
         resp = r.json()
-        if resp['OPT_STATUS'] != 'SUCCESS':
-            print 'failed'
-            print r.text
-        else:
-            print 'SUCCESS'
-            print r.text
+        print resp
     except Exception as e:
         print "Exception"
-        print e
+        print r.text
 
 
 if __name__ == '__main__':

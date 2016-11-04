@@ -310,8 +310,9 @@ def get_dhcp_agent_device_id(network_id, host):
     # not the domain name. This will guarantee consistentcy
     # whether a local hostname or an fqdn is passed in.
     local_hostname = host.split('.')[0]
+    LOG.debug("local_hostname:%s, uuid.NAMESPACE_DNS:%s", local_hostname, uuid.NAMESPACE_DNS)
     host_uuid = uuid.uuid5(uuid.NAMESPACE_DNS, str(local_hostname))
-    return 'dhcp%s-%s' % (host_uuid, network_id)
+    return 'dhcp%s' % (network_id)
 
 
 def cpu_count():

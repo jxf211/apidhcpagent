@@ -91,6 +91,8 @@ class PortNotFoundOnNetwork(NotFound):
     message = ("Port %(port_id)s could not be found "
                 "on network %(net_id)s")
 
+class DhcpPortNotFoundOnNetwork(NotFound):
+    message = ("DHCP_PORT could not be found on network %(net_id)s")
 
 class PolicyFileNotFound(NotFound):
     message = ("Policy configuration policy.json could not be found")

@@ -998,11 +998,13 @@ class DeviceManager(object):
                 # break since we found port that matches device_id
                 break
 
-        # check for a reserved DHCP port
+        # check for a reserved DHCP port\
+        dhcp_port = None
         if dhcp_port is None:
             LOG.debug('DHCP port %(device_id)s on network %(network_id)s'
                       ' does not yet exist. Checking for a reserved port.',
                       {'device_id': device_id, 'network_id': network.id})
+            raise exceptions.DhcpPortNotFoundOnNetwork(net_id = network.id)
             for port in network.ports:
                 port_device_id = getattr(port, 'device_id', None)
                 if port_device_id == constants.DEVICE_ID_RESERVED_DHCP_PORT:
@@ -1025,49 +1027,7 @@ class DeviceManager(object):
                 tenant_id=network.tenant_id,
                 fixed_ips=[dict(subnet_id=s) for s in dhcp_enabled_subnet_ids])
             #dhcp_port = self.plugin.create_dhcp_port({'port': port_dict})
-        '''
-        port = {
-		u'status': u'ACTIVE',
-		u'binding:host_id': u'jun2',
-		u'allowed_address_pairs': [],
-		u'extra_dhcp_opts': [],
-		u'device_owner': u'network:dhcp',
-		u'binding:profile': {},
-		u'fixed_ips':
-			    [{
-			    u'subnet_id': u'ec1028b2-7cb0-4feb-b974-6b8ea7e7f082',
-			    u'subnet': {
-				       u'name': u'inter-sub',
-				       u'enable_dhcp': True,
-				       u'network_id': u'8165bc3d-400a-48a0-9186-bf59f7f94b05',
-				       u'tenant_id': u'befa06e66e8047a1929a3912fff2c591',
-				       u'dns_nameservers': [],
-				       u'ipv6_ra_mode': None,
-				       u'allocation_pools': [{u'start': u'10.10.30.2', u'end': u'10.10.30.254'}],
-				       u'gateway_ip': u'10.10.30.1',
-				       u'shared': False,
-				       u'ip_version': 4,
-				       u'host_routes': [],
-				       u'cidr': u'10.10.30.0/24',
-				       u'ipv6_address_mode': None,
-				       u'id': u'ec1028b2-7cb0-4feb-b974-6b8ea7e7f08f',
-				       u'subnetpool_id': None
-				      },
-			    u'ip_address': u'10.10.30.2'
-			    }],
-		u'id': u'712a2c63-e610-42c9-9ab3-4e8b6540d125',
-		u'security_groups': [],
-		u'device_id': u'dhcp2156d71d-f5c3-5752-9e43-4e8290a5696a-8165bc3d-400a-48a0-9186-bf59f7f94b05',
-		u'name': u'',
-		u'admin_state_up': True,
-		#u'network_id': u'1111bc3d-400a-48a0-9186-bf59f7f94b05',
-		u'tenant_id': u'befa06e66e8047a1929a3912fff2c591',
-		u'binding:vif_details': {u'port_filter': True},
-		u'binding:vnic_type': u'normal',
-		u'binding:vif_type': u'bridge',
-		u'mac_address': u'fa:16:3e:65:29:22',
-		}
-        '''
+
         dhcp_port = DictModel(dhcp_port)
         if not dhcp_port:
             raise exceptions.Conflict()
