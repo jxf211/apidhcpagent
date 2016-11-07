@@ -1101,12 +1101,13 @@ class DeviceManager(object):
     def destroy(self, network, device_name):
         """Destroy the device used for the network's DHCP on this host."""
         if device_name:
+            LOG.debug("device_name :%s namespace:%s", device_name, network.namespace)
             self.driver.unplug(device_name, namespace=network.namespace)
         else:
             LOG.debug('No interface exists for network %s', network.id)
 
-        self.plugin.release_dhcp_port(network.id,
-                                      self.get_device_id(network))
+        #self.plugin.release_dhcp_port(network.id,
+        #                              self.get_device_id(network))
 
     def fill_dhcp_udp_checksums(self, namespace):
         """Ensure DHCP reply packets always have correct UDP checksums."""

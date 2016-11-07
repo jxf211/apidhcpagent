@@ -212,10 +212,10 @@ class DhcpAgent(object):
             LOG.err("payload resource no network_id")
             #network = self.safe_get_network_info(network_id)
         if network:
-            pool = eventlet.GreenPool(cfg.CONF.num_sync_threads)
-            pool.spawn(self.safe_configure_dhcp_for_network, network)
+            #pool = eventlet.GreenPool(cfg.CONF.num_sync_threads)
+            #pool.spawn(self.safe_configure_dhcp_for_network, network)
 
-            #self.configure_dhcp_for_network(network)
+            self.configure_dhcp_for_network(network)
 
     @utils.exception_logger()
     def safe_configure_dhcp_for_network(self, network):
@@ -242,14 +242,7 @@ class DhcpAgent(object):
         """Disable DHCP for a network known to the agent."""
         network = self.cache.get_network_by_id(network_id)
         if network:
-            if (self.conf.use_namespaces and
-                self.conf.enable_isolated_metadata):
-                # NOTE(jschwarz): In the case where a network is deleted, all
-                # the subnets and ports are deleted before this function is
-                # called, so checking if 'should_enable_metadata' is True
-                # for any subnet is false logic here.
-                self.disable_isolated_metadata_proxy(network)
-            if self.call_driver('disable', network):
+           if self.call_driver('disable', network):
                 self.cache.remove(network)
 
     def refresh_dhcp_helper(self, network_id, network_rs=None):
@@ -276,36 +269,62 @@ class DhcpAgent(object):
                 self.cache.put(network)
         else:
             self.disable_dhcp_helper(network.id)
-    @utils.synchronized('dhcp-agent')
+
     def network_create_end(self, req=None, **kwargs):
-        """Handle the network.create.end notification event."""
         try:
             payload = json.loads(req.body)
-            LOG.debug("payload :%s", payload)
             network_id = payload['network']['id']
             network = payload['network']
+            pool = eventlet.GreenPool(cfg.CONF.num_sync_threads)
+            pool.spawn(self._network_create, network_id, network)
+            return  200, "OK"
+        except Exception as err:
+            LOG.error(err)
+            raise Exception('Error: %s' % err)
+
+    @utils.synchronized('dhcp-agent')
+    def _network_create(self, network_id, network):
+        """Handle the network.create.end notification event."""
+        try:
             self.enable_dhcp_helper(network_id, network)
+        except Exception as err:
+            LOG.error(err)
+            raise Exception('Error: %s' % err)
+
+    def network_updata_end(self, req=None, **kwargs):
+        try:
+            payload = json.loads(req.body)
+            network_id = payload['network']['id']
+            network = payload['network']
+            pool = eventlet.GreenPool(cfg.CONF.num_sync_threads)
+            pool.spawn(self._network_updata, network_id, network)
             return 200, "OK"
         except Exception as err:
             LOG.error(err)
             raise Exception('Error: %s' % err)
 
     @utils.synchronized('dhcp-agent')
-    def network_update_end(self, req=None, **kwargs):
+    def _network_update(self, network_id, network):
         """Handle the network.update.end notification event."""
-        payload = json.loads(req.body)
-        network_id = payload['network']['id']
-        network = payload['network']
-        if payload['network']['admin_state_up']:
-            self.enable_dhcp_helper(network_id, network)
-        else:
-            self.disable_dhcp_helper(network_id)
+        self.enable_dhcp_helper(network_id, network)
+
+    def network_delete_end(self, req=None, network_id=None,**kwargs):
+        try:
+            pool = eventlet.GreenPool(cfg.CONF.num_sync_threads)
+            pool.spawn(self._network_delete, network_id)
+            return 200, "ok"
+        except Exception  as err:
+            LOG.error(err)
+            raise Exception('Error: %s' % err)
 
     @utils.synchronized('dhcp-agent')
-    def network_delete_end(self, req=None, **kwargs):
+    def _network_delete(self, network_id=None):
         """Handle the network.delete.end notification event."""
-        payload = json.loads(req.body)
-        self.disable_dhcp_helper(payload['network_id'])
+        try:
+            self.disable_dhcp_helper(network_id)
+        except Exception  as err:
+            LOG.error(err)
+            raise Exception('Error: %s' % err)
 
     @utils.synchronized('dhcp-agent')
     def subnet_update_end(self, req=None, **kwargs):
@@ -323,7 +342,7 @@ class DhcpAgent(object):
         """Handle the subnet.delete.end notification event."""
         payload = json.loads(req.body)
         subnet_id = payload['subnet_id']
-        #network = self.cache.get_network_by_subnet_id(subnet_id)
+        network = self.cache.get_network_by_subnet_id(subnet_id)
         network = payload['network']
         if network:
             self.refresh_dhcp_helper(network.id, network)

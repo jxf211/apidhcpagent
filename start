@@ -1,6 +1,6 @@
 #!/bin/bash
 
-./nspdhcpagent.py --config-file  /etc/dhcpagent/neutron.conf \
---config-file /etc/dhcpagent/dhcp_agent.ini \
+./nspdhcpagent.py --config-file  /etc/dhcpagent/etc/neutron.conf \
+--config-file /etc/dhcpagent/etc/dhcp_agent.ini \
 --log-file /var/log/neutron/nspdhcpagent.log 
 #-m

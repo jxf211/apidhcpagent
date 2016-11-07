@@ -181,6 +181,19 @@ def create_net_work():
         print "Exception"
         print r.text
 
+def delete_net_work():
+    url =  "http://192.168.49.22:20010/v1/dhcp_network/44783e1a-63fe-43d5-9989-e1515c24eecd"
+    headers = {'content-type': 'application/json'}
+    try:
+        print url
+        payload = json.dumps(network_data)
+        r = requests.delete(url, headers = headers, verify=False)
+        print r
+        print r.text, r.tatus_code
+    except Exception as e:
+        print "Exception"
+        print r.text
 
 if __name__ == '__main__':
     create_net_work()
+    #delete_net_work()

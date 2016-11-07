@@ -260,7 +260,7 @@ class API(Router):
 
                     {
                         'name':'network_delete_end',
-                        'url':'/dhcp_network/',
+                        'url':'/dhcp_network/:network_id',
                         'action':'network_delete_end',
                         'method':'DELETE'
                     },
