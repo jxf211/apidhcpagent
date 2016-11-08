@@ -274,7 +274,7 @@ class API(Router):
 
                     {
                         'name':'subnet_delete_end',
-                        'url':'/dhcp_subnet/',
+                        'url':'/dhcp_subnet/:subnet_id',
                         'action':'subnet_delete_end',
                         'method':'DELETE'
                     },
@@ -288,7 +288,7 @@ class API(Router):
 
                     {
                         'name':'port_delete_end',
-                        'url':'/dhcp_port/',
+                        'url':'/dhcp_port/:port_id',
                         'action':'port_delete_end',
                         'method':'DELETE'
                     },

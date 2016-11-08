@@ -746,6 +746,7 @@ class Dnsmasq(DhcpLocalProcess):
     def _generate_opts_per_port(self, subnet_index_map):
         options = []
         dhcp_ips = collections.defaultdict(list)
+        LOG.debug("dhcp_ips:%s", dhcp_ips)
         for port in self.network.ports:
             if getattr(port, 'extra_dhcp_opts', False):
                 port_ip_versions = set(
@@ -1047,7 +1048,6 @@ class DeviceManager(object):
         """Create and initialize a device for network's DHCP on this host."""
         port = self.setup_dhcp_port(network)
         interface_name = self.get_interface_name(network, port)
-        tag = network.get("vlantag", None)
         LOG.debug("port :%s", port)
         if ip_lib.ensure_device_is_ready(interface_name,
                                          namespace=network.namespace):
@@ -1064,6 +1064,7 @@ class DeviceManager(object):
                              namespace=network.namespace)
             self.fill_dhcp_udp_checksums(namespace=network.namespace)
 
+        tag = network.get("vlantag", None)
         if tag:
             self.set_tag(interface_name, tag)
 
@@ -1105,9 +1106,6 @@ class DeviceManager(object):
             self.driver.unplug(device_name, namespace=network.namespace)
         else:
             LOG.debug('No interface exists for network %s', network.id)
-
-        #self.plugin.release_dhcp_port(network.id,
-        #                              self.get_device_id(network))
 
     def fill_dhcp_udp_checksums(self, namespace):
         """Ensure DHCP reply packets always have correct UDP checksums."""

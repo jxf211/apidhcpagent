@@ -43,7 +43,6 @@ class DeamonMain(daemon.Daemon):
             sys.exit(0)
 
     def run(self):
-        #super(DeamonMain, selif).run()
         signal.signal(signal.SIGTERM, self.sigterm_handler)
         LOG.info('Launching DhcpAgent API Stack (DHCP_AGENT) ...')
         try:
@@ -72,6 +71,6 @@ if __name__== '__main__':
     main = DeamonMain("192.168.49.22", "20010", '/var/dhcpagent/pid')
     if cfg.CONF.daemon:
         main.start()
-    else :
+    else:
         main.run()
 

@@ -5,9 +5,6 @@ import requests
 import os
 import json
 import time
-
-url =  "http://192.168.49.22:20010/v1/dhcp_network/"
-
 network = { "id": "44783e1a-63fe-43d5-9989-e1515c24eecd",
             "subnets": [{"id": "ec1028b2-7cb0-4feb-b974-6b8ea7e7f08f",
                                     "ip_version": 4, "cidr":"10.10.40.0/24", "name":"testsubnet",
@@ -40,7 +37,7 @@ network = { "id": "44783e1a-63fe-43d5-9989-e1515c24eecd",
                         "admin_state_up":True,
                         "id":"cad98138-6e5f-4f83-a4c5-5497fa4758b4",
                         "mac_address": "fa:16:3e:65:29:6d",
-                        "device_owner": "network:dhcp",
+                        "device_owner": "nova:computer",
                         "fixed_ips":
                             [{
                                 u'subnet_id': u'ec1028b2-7cb0-4feb-b974-6b8ea7e7f08f',
@@ -69,7 +66,7 @@ network = { "id": "44783e1a-63fe-43d5-9989-e1515c24eecd",
                         "admin_state_up":True,
                         "id":"cad98138-6e5f-4f83-a4c5-5497fa4758b2",
                         "mac_address": "fa:16:3e:65:29:62",
-                        "device_owner": "network:dhcp",
+                        "device_owner": "nova:computer",
                         "fixed_ips":
                             [{
                                 u'subnet_id': u'ec1028b2-7cb0-4feb-b974-6b8ea7e7f082',
@@ -168,6 +165,7 @@ network = { "id": "44783e1a-63fe-43d5-9989-e1515c24eecd",
 network_data = {"network": network }
 
 def create_net_work():
+    url =  "http://192.168.49.22:20010/v1/dhcp_network/"
     headers = {'content-type': 'application/json'}
     try:
         print url

@@ -29,6 +29,7 @@ from common import exceptions
 from common import topics
 from common import utils
 import traceback
+from webob import exc
 # import manager
 #from common import loopingcall
 
@@ -47,8 +48,12 @@ class DhcpAgent(object):
 
     def __init__(self, host=None):
         #super(DhcpAgent, self).__init__(host=host)
+        if not host:
+            host = cfg.CONF.host
+        self.host = host
         self.needs_resync_reasons = collections.defaultdict(list)
         self.conf = cfg.CONF
+        self.pool = eventlet.GreenPool(cfg.CONF.num_sync_threads)
         self.cache = NetworkCache()
         self.dhcp_driver_cls = importutils.import_class(self.conf.dhcp_driver)
         #ctx = context.get_admin_context_without_session()
@@ -254,7 +259,8 @@ class DhcpAgent(object):
             # DHCP current not running for network.
             return self.enable_dhcp_helper(network_id)
 
-        network = self.safe_get_network_info(network_id)
+        #network = self.safe_get_network_info(network_id)
+        network = dhcp.NetModel(self.conf.use_namespaces, network_rs)
         if not network:
             return
 
@@ -275,8 +281,7 @@ class DhcpAgent(object):
             payload = json.loads(req.body)
             network_id = payload['network']['id']
             network = payload['network']
-            pool = eventlet.GreenPool(cfg.CONF.num_sync_threads)
-            pool.spawn(self._network_create, network_id, network)
+            self.pool.spawn(self._network_create, network_id, network)
             return  200, "OK"
         except Exception as err:
             LOG.error(err)
@@ -296,8 +301,7 @@ class DhcpAgent(object):
             payload = json.loads(req.body)
             network_id = payload['network']['id']
             network = payload['network']
-            pool = eventlet.GreenPool(cfg.CONF.num_sync_threads)
-            pool.spawn(self._network_updata, network_id, network)
+            self.pool.spawn(self._network_updata, network_id, network)
             return 200, "OK"
         except Exception as err:
             LOG.error(err)
@@ -310,8 +314,7 @@ class DhcpAgent(object):
 
     def network_delete_end(self, req=None, network_id=None,**kwargs):
         try:
-            pool = eventlet.GreenPool(cfg.CONF.num_sync_threads)
-            pool.spawn(self._network_delete, network_id)
+            self.pool.spawn(self._network_delete, network_id)
             return 200, "ok"
         except Exception  as err:
             LOG.error(err)
@@ -326,32 +329,52 @@ class DhcpAgent(object):
             LOG.error(err)
             raise Exception('Error: %s' % err)
 
-    @utils.synchronized('dhcp-agent')
     def subnet_update_end(self, req=None, **kwargs):
+        try:
+            payload = json.loads(req.body)
+            network_id = payload['subnet']['network_id']
+            network = payload['network']
+            slef.spool.pawn(self._subnet_update, network_id, network)
+        except Exception as err:
+            LOG.error(err)
+            raise Exception('Err: %s ' % err)
+
+    @utils.synchronized('dhcp-agent')
+    def _subnet_update(self, network_id, network):
         """Handle the subnet.update.end notification event."""
-        payload = json.loads(req.body)
-        network_id = payload['subnet']['network_id']
-        network = payload['network']
         self.refresh_dhcp_helper(network_id, network)
 
     # Use the update handler for the subnet create event.
     subnet_create_end = subnet_update_end
 
-    @utils.synchronized('dhcp-agent')
-    def subnet_delete_end(self, req=None, **kwargs):
-        """Handle the subnet.delete.end notification event."""
-        payload = json.loads(req.body)
-        subnet_id = payload['subnet_id']
-        network = self.cache.get_network_by_subnet_id(subnet_id)
-        network = payload['network']
-        if network:
-            self.refresh_dhcp_helper(network.id, network)
+    def subnet_delete_end(self, req=None, subnet_id=None,**kwargs):
+        try:
+            network = self.cache.get_network_by_subnet_id(subnet_id)
+            if network:
+                self.spool.spawn(self._subnet_delete, network.id, network)
+            else:
+                LOG.debug("subnet_id: %s. network  does not exist", subnet_id)
+        except Exception as err:
+            LOG.error(err)
+            raise Exception('Err: %s' % err)
 
     @utils.synchronized('dhcp-agent')
+    def _subnet_delete(self, network_id, network):
+        """Handle the subnet.delete.end notification event."""
+        self.refresh_dhcp_helper(network.id, network)
+
     def port_update_end(self, req=None, **kwargs):
+        try:
+            payload = json.loads(req.body)
+            updated_port = dhcp.DictModel(payload['port'])
+            self.pool.spawn(self._port_update, updated_port)
+        except Exception as err:
+            LOG.error(err)
+            raise Exception('Err: %s' % err)
+
+    @utils.synchronized('dhcp-agent')
+    def _port_update(self, updated_port):
         """Handle the port.update.end notification event."""
-        payload = json.loads(req.body)
-        updated_port = dhcp.DictModel(payload['port'])
         network = self.cache.get_network_by_id(updated_port.network_id)
         if network:
             driver_action = 'reload_allocations'
@@ -373,15 +396,24 @@ class DhcpAgent(object):
     # Use the update handler for the port create event.
     port_create_end = port_update_end
 
+    def port_delete_end(self, req=None, port_id=None, **kwargs):
+        try:
+            seld.pool.spwan(self._port_delete, port_id)
+        except Exception as err:
+            LOG.error(err)
+            raise Exception('Err: %s' %  err)
+
     @utils.synchronized('dhcp-agent')
-    def port_delete_end(self, req=None, **kwargs):
+    def _port_delete(self, port_id):
         """Handle the port.delete.end notification event."""
-        payload = json.loads(req.body)
-        port = self.cache.get_port_by_id(payload['port_id'])
+        port = self.cache.get_port_by_id(port_id)
         if port:
             network = self.cache.get_network_by_id(port.network_id)
             self.cache.remove_port(port)
             self.call_driver('reload_allocations', network)
+
+    def default(self, req=None, **kwargs):
+        raise exc.HTTPNotFound()
 
 class NetworkCache(object):
     """Agent cache of the current network state."""
