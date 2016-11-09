@@ -40,29 +40,29 @@ OPTS = [
                 help=('Uses veth for an interface or not')),
     cfg.IntOpt('network_device_mtu',
                help=('MTU setting for device.')),
-    cfg.StrOpt('meta_flavor_driver_mappings',
-               help=('Mapping between flavor and LinuxInterfaceDriver. '
-                      'It is specific to MetaInterfaceDriver used with '
-                      'admin_user, admin_password, admin_tenant_name, '
-                      'admin_url, auth_strategy, auth_region and '
-                      'endpoint_type.')),
-    cfg.StrOpt('admin_user',
-               help=("Admin username")),
-    cfg.StrOpt('admin_password',
-               help=("Admin password"),
-               secret=True),
-    cfg.StrOpt('admin_tenant_name',
-               help=("Admin tenant name")),
-    cfg.StrOpt('auth_url',
-               help=("Authentication URL")),
-    cfg.StrOpt('auth_strategy', default='keystone',
-               help=("The type of authentication to use")),
-    cfg.StrOpt('auth_region',
-               help=("Authentication region")),
-    cfg.StrOpt('endpoint_type',
-               default='publicURL',
-               help=("Network service endpoint type to pull from "
-                      "the keystone catalog")),
+#    cfg.StrOpt('meta_flavor_driver_mappings',
+##               help=('Mapping between flavor and LinuxInterfaceDriver. '
+#                      'It is specific to MetaInterfaceDriver used with '
+#                      'admin_user, admin_password, admin_tenant_name, '
+#                      'admin_url, auth_strategy, auth_region and '
+#                      'endpoint_type.')),
+#    cfg.StrOpt('admin_user',
+#               help=("Admin username")),
+#    cfg.StrOpt('admin_password',
+#               help=("Admin password"),
+#               secret=True),
+#    cfg.StrOpt('admin_tenant_name',
+#               help=("Admin tenant name")),
+#    cfg.StrOpt('auth_url',
+#               help=("Authentication URL")),
+#    cfg.StrOpt('auth_strategy', default='keystone',
+#               help=("The type of authentication to use")),
+#    cfg.StrOpt('auth_region',
+#               help=("Authentication region")),
+#    cfg.StrOpt('endpoint_type',
+#               default='publicURL',
+#               help=("Network service endpoint type to pull from "
+#                      "the keystone catalog")),
 ]
 
 

@@ -9,7 +9,7 @@ import sys
 import traceback
 import logging as syslog
 from oslo_config import cfg
-from utils import get_ip_address
+#from utils import get_ip_address
 from common import config as common_config
 from nspagent.dhcpcommon import config
 from nspagent.dhcp.linux import interface

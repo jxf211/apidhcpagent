@@ -1067,7 +1067,6 @@ class DeviceManager(object):
         tag = network.get("vlantag", None)
         if tag:
             self.set_tag(interface_name, tag)
-
         ip_cidrs = []
         for fixed_ip in port.fixed_ips:
             LOG.debug("fixed_ip.subnet:%s", fixed_ip.subnet)
@@ -1118,6 +1117,7 @@ class DeviceManager(object):
 
     def ensure_vlan(self, physical_interface, vlan_id):
         interface = self.get_subinterface_name(physical_interface, vlan_id)
+        interface = physical_interface
         if not ip_lib.device_exists(interface):
             LOG.debug("Creating subinterface %(interface)s for "
                       "VLAN %(vlan_id)s on interface "

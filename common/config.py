@@ -37,10 +37,10 @@ import re
 LOG = logging.getLogger(__name__)
 
 core_opts = [
-    cfg.StrOpt('bind_host', default='0.0.0.0',
-               help=("The host IP to bind to")),
-    cfg.IntOpt('bind_port', default=9696,
-               help=("The port to bind to")),
+#    cfg.StrOpt('bind_host', default='0.0.0.0',
+#               help=("The host IP to bind to")),
+#    cfg.IntOpt('bind_port', default=9696,
+#               help=("The port to bind to")),
 #    cfg.StrOpt('api_paste_config', default="api-paste.ini",
 #               help=("The API paste config file to use")),
 #    cfg.StrOpt('api_extensions_path', default="",
@@ -53,8 +53,8 @@ core_opts = [
 #                help=("The service plugins Neutron will use")),
     cfg.StrOpt('base_mac', default="fa:16:3e:00:00:00",
                help=("The base MAC address Neutron will use for VIFs")),
-#    cfg.IntOpt('mac_generation_retries', default=16,
-#               help=("How many times Neutron will retry MAC generation")),
+    cfg.IntOpt('mac_generation_retries', default=16,
+               help=("How many times Neutron will retry MAC generation")),
 #    cfg.BoolOpt('allow_bulk', default=True,
 #                help=("Allow the usage of the bulk API")),
 #    cfg.BoolOpt('allow_pagination', default=False,
@@ -131,9 +131,9 @@ core_opts = [
                 help=('If True, effort is made to advertise MTU settings '
                        'to VMs via network methods (DHCP and RA MTU options) '
                        'when the network\'s preferred MTU is known.')),
-    cfg.BoolOpt('vlan_transparent', default=False,
-                help=('If True, then allow plugins that support it to '
-                       'create VLAN transparent networks.')),
+#    cfg.BoolOpt('vlan_transparent', default=False,
+#                help=('If True, then allow plugins that support it to '
+#                       'create VLAN transparent networks.')),
 ]
 
 core_cli_opts = [

@@ -158,7 +158,7 @@ IPV6_LLA_PREFIX = 'fe80::/64'
 IPV6_PD_POOL_ID = 'prefix_delegation'
 
 # Linux interface max length
-DEVICE_NAME_MAX_LEN = 15
+DEVICE_NAME_MAX_LEN = 20
 
 # Device names start with "tap"
 TAP_DEVICE_PREFIX = 'tap'
