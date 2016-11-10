@@ -1005,28 +1005,6 @@ class DeviceManager(object):
                       ' does not yet exist. Checking for a reserved port.',
                       {'device_id': device_id, 'network_id': network.id})
             raise exceptions.DhcpPortNotFoundOnNetwork(net_id = network.id)
-            for port in network.ports:
-                port_device_id = getattr(port, 'device_id', None)
-                if port_device_id == constants.DEVICE_ID_RESERVED_DHCP_PORT:
-                    #dhcp_port = self.plugin.update_dhcp_port(
-                    #    port.id, {'port': {'network_id': network.id,
-                    #                       'device_id': device_id}})
-                    if dhcp_port:
-                        break
-
-        # DHCP port has not yet been created.
-        if dhcp_port is None:
-            LOG.debug('DHCP port %(device_id)s on network %(network_id)s'
-                      ' does not yet exist.', {'device_id': device_id,
-                                               'network_id': network.id})
-            port_dict = dict(
-                name='',
-                admin_state_up=True,
-                device_id=device_id,
-                network_id=network.id,
-                tenant_id=network.tenant_id,
-                fixed_ips=[dict(subnet_id=s) for s in dhcp_enabled_subnet_ids])
-            #dhcp_port = self.plugin.create_dhcp_port({'port': port_dict})
 
         dhcp_port = DictModel(dhcp_port)
         if not dhcp_port:
@@ -1068,6 +1046,8 @@ class DeviceManager(object):
                 self.set_tag(interface_name.replace("ns-", "tap"), tag)
             else:
                 self.set_tag(interface_name, tag)
+        else:
+            LOG.debug("No vlantag exists for network %s", network.id)
         ip_cidrs = []
         for fixed_ip in port.fixed_ips:
             LOG.debug("fixed_ip.subnet:%s", fixed_ip.subnet)
