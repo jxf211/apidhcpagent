@@ -127,7 +127,6 @@ def load_filters(filters_path):
                 filterlist.append(newfilter)
     return filterlist
 
-
 def match_filter(filter_list, userargs, exec_dirs=None):
     """Checks user command and arguments through command filters.
 

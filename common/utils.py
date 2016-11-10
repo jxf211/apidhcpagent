@@ -41,7 +41,7 @@ from common import constants as q_const
 
 TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 LOG = logging.getLogger(__name__)
-SYNCHRONIZED_PREFIX = 'neutron-'
+SYNCHRONIZED_PREFIX = 'agent-'
 
 synchronized = lockutils.synchronized_with_prefix(SYNCHRONIZED_PREFIX)
 

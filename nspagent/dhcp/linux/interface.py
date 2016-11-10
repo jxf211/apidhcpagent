@@ -249,8 +249,8 @@ class OVSInterfaceDriver(LinuxInterfaceDriver):
             internal = not self.conf.ovs_use_veth
             self._ovs_add_port(bridge, tap_name, port_id, mac_address,
                                internal=internal)
-
-            ns_dev.link.set_address(mac_address)
+            if mac_address:
+                ns_dev.link.set_address(mac_address)
 
             if self.conf.network_device_mtu:
                 ns_dev.link.set_mtu(self.conf.network_device_mtu)

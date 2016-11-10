@@ -78,7 +78,7 @@ class JSONRequestDeserializer(object):
             return {}
 
 class Request(webob.Request):
-    """Add some OpenStack API-specific logic to the base webob.Request."""
+    """Add some API-specific logic to the base webob.Request."""
     def best_match_content_type(self):
         """Determine the requested response content-type."""
         supported = ('application/json',)

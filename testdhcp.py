@@ -153,7 +153,7 @@ network = { "id": "44783e1a-63fe-43d5-9989-e1515c24eecd",
                             u'binding:vif_details': {u'port_filter': True},
                             u'binding:vnic_type': u'normal',
                             u'binding:vif_type': u'bridge',
-                            u'mac_address': u'fa:16:3e:65:29:22',
+#                            u'mac_address': u'fa:16:3e:65:29:22',
                             }
 
                         ],
@@ -192,6 +192,34 @@ def delete_net_work():
         print "Exception"
         print r.text
 
+def delete_subnet():
+    url =  "http://192.168.49.22:20010/v1/dhcp_subnet/ec1028b2-7cb0-4feb-b974-6b8ea7e7f08f"
+    headers = {'content-type': 'application/json'}
+    try:
+        print url
+        r = requests.delete(url, headers = headers, verify=False)
+        print r
+        print r.text, r.tatus_code
+    except Exception as e:
+        print "Exception"
+        print r.text
+
+def delete_port():
+    url =  "http://192.168.49.22:20010/v1/dhcp_port/cad98138-6e5f-4f83-a4c5-5497fa4758b4"
+    headers = {'content-type': 'application/json'}
+    try:
+        print url
+        r = requests.delete(url, headers = headers, verify=False)
+        print r
+        print r.text, r.tatus_code
+    except Exception as e:
+        print "Exception"
+        print r.text
+
+
+
 if __name__ == '__main__':
-    create_net_work()
+    #create_net_work()
     #delete_net_work()
+    #delete_subnet()
+    delete_port()

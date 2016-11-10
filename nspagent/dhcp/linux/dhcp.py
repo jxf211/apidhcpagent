@@ -1048,25 +1048,26 @@ class DeviceManager(object):
         """Create and initialize a device for network's DHCP on this host."""
         port = self.setup_dhcp_port(network)
         interface_name = self.get_interface_name(network, port)
-        LOG.debug("port :%s", port)
+        LOG.debug("DHCP_PORT :%s", port)
+        LOG.debug("DPCP_PORT_NAME: %s", interface_name)
         if ip_lib.ensure_device_is_ready(interface_name,
                                          namespace=network.namespace):
             LOG.debug('Reusing existing device: %s.', interface_name)
-            #from nspagent.dhcpcommon import ovs_lib
-            #ovs = ovs_lib.BaseOVS()
-            #ovs.set_db_attribute('Port', interface_name, 'tag', tag)
         else:
             LOG.debug("Reusing not existing device:%s", interface_name)
             self.driver.plug(network.id,
                              port.id,
                              interface_name,
-                             port.mac_address,
+                             port.get("mac_address", None),
                              namespace=network.namespace)
             self.fill_dhcp_udp_checksums(namespace=network.namespace)
 
         tag = network.get("vlantag", None)
         if tag:
-            self.set_tag(interface_name, tag)
+            if self.conf.ovs_use_veth:
+                self.set_tag(interface_name.replace("ns-", "tap"), tag)
+            else:
+                self.set_tag(interface_name, tag)
         ip_cidrs = []
         for fixed_ip in port.fixed_ips:
             LOG.debug("fixed_ip.subnet:%s", fixed_ip.subnet)

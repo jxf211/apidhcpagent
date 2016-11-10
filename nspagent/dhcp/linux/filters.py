@@ -61,7 +61,6 @@ class CommandFilter(object):
         """Returns specific environment to set, None if none."""
         return None
 
-
 class RegExpFilter(CommandFilter):
     """Command filter doing regexp matching for every argument."""
 

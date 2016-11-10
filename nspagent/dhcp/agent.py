@@ -234,12 +234,10 @@ class DhcpAgent(object):
         if not network.admin_state_up:
             return
 
-        dhcp_network_enabled = False
         for subnet in network.subnets:
             if subnet.enable_dhcp:
                 LOG.debug("subnet:%s", subnet)
                 if self.call_driver('enable', network):
-                    dhcp_network_enabled = True
                     self.cache.put(network)
                 break
 
@@ -250,17 +248,19 @@ class DhcpAgent(object):
            if self.call_driver('disable', network):
                 self.cache.remove(network)
 
-    def refresh_dhcp_helper(self, network_id, network_rs=None):
+    def refresh_dhcp_helper(self, network_id, network=None):
         """Refresh or disable DHCP for a network depending on the current state
         of the network.
         """
+        self.call_driver('reload_allocations', network)
+        return
         old_network = self.cache.get_network_by_id(network_id)
         if not old_network:
             # DHCP current not running for network.
-            return self.enable_dhcp_helper(network_id)
+           return self.enable_dhcp_helper(network_id)
 
         #network = self.safe_get_network_info(network_id)
-        network = dhcp.NetModel(self.conf.use_namespaces, network_rs)
+        #network = dhcp.NetModel(self.conf.use_namespaces, network_rs)
         if not network:
             return
 
@@ -268,6 +268,7 @@ class DhcpAgent(object):
         new_cidrs = set(s.cidr for s in network.subnets if s.enable_dhcp)
 
         if new_cidrs and old_cidrs == new_cidrs:
+            LOG.debug("reload_allocations:%s", network)
             self.call_driver('reload_allocations', network)
             self.cache.put(network)
         elif new_cidrs:
@@ -347,11 +348,14 @@ class DhcpAgent(object):
     # Use the update handler for the subnet create event.
     subnet_create_end = subnet_update_end
 
-    def subnet_delete_end(self, req=None, subnet_id=None,**kwargs):
+    def subnet_delete_end(self, req=None, subnet_id=None, **kwargs):
         try:
-            network = self.cache.get_network_by_subnet_id(subnet_id)
-            if network:
-                self.spool.spawn(self._subnet_delete, network.id, network)
+            subnet = self.cache.get_subnet_by_id(subnet_id)
+
+            if subnet:
+                network = self.cache.get_network_by_subnet_id(subnet_id)
+                self.cache.remove_subnet(subnet)
+                self.pool.spawn(self._subnet_delete, network.id, network)
             else:
                 LOG.debug("subnet_id: %s. network  does not exist", subnet_id)
         except Exception as err:
@@ -361,7 +365,7 @@ class DhcpAgent(object):
     @utils.synchronized('dhcp-agent')
     def _subnet_delete(self, network_id, network):
         """Handle the subnet.delete.end notification event."""
-        self.refresh_dhcp_helper(network.id, network)
+        self.refresh_dhcp_helper(network_id, network)
 
     def port_update_end(self, req=None, **kwargs):
         try:
@@ -398,7 +402,7 @@ class DhcpAgent(object):
 
     def port_delete_end(self, req=None, port_id=None, **kwargs):
         try:
-            seld.pool.spwan(self._port_delete, port_id)
+            self.pool.spawn(self._port_delete, port_id)
         except Exception as err:
             LOG.error(err)
             raise Exception('Err: %s' %  err)
@@ -475,12 +479,28 @@ class NetworkCache(object):
                 del self.port_lookup[port.id]
                 break
 
+    def remove_subnet(self, subnet):
+        network = self.get_network_by_subnet_id(subnet.id)
+
+        for index in range(len(network.subnets)):
+            if network.subnets[index] == subnet:
+                del network.subnets[index]
+                del self.subnet_lookup[subnet.id]
+                break
+
     def get_port_by_id(self, port_id):
         network = self.get_network_by_port_id(port_id)
         if network:
             for port in network.ports:
                 if port.id == port_id:
                     return port
+
+    def get_subnet_by_id(self, subnet_id):
+        network = self.get_network_by_subnet_id(subnet_id)
+        if network:
+            for subnet in network.subnets:
+                if subnet.id == subnet_id:
+                    return subnet
 
     def get_state(self):
         net_ids = self.get_network_ids()
