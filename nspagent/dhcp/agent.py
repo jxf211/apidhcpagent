@@ -317,7 +317,7 @@ class DhcpAgent(object):
         try:
             msg = "OK"
             network = self.cache.get_network_by_id(network_id)
-            if network
+            if network:
                 self.pool.spawn(self._network_delete, network_id)
             else:
                 msg = "network_id: %s. network does not exist" % network_id
@@ -358,8 +358,8 @@ class DhcpAgent(object):
     def subnet_delete_end(self, req=None, subnet_id=None, **kwargs):
         try:
             subnet = self.cache.get_subnet_by_id(subnet_id)
-
             if subnet:
+                LOG.debug("hehhh")
                 network = self.cache.get_network_by_subnet_id(subnet_id)
                 self.cache.remove_subnet(subnet)
                 self.pool.spawn(self._subnet_delete, network.id, network)
@@ -426,7 +426,8 @@ class DhcpAgent(object):
     @utils.synchronized('dhcp-agent')
     def _port_delete(self, port_id):
         """Handle the port.delete.end notification event."""
-        network = self.cache.get_network_by_id(port.network_id)
+        network = self.cache.get_network_by_port_id(port_id)
+        port = self.cache.get_port_by_id(port_id)
         self.cache.remove_port(port)
         self.call_driver('reload_allocations', network)
 
@@ -495,9 +496,15 @@ class NetworkCache(object):
 
     def remove_subnet(self, subnet):
         network = self.get_network_by_subnet_id(subnet.id)
-
+        LOG.debug("remove_subnet")
         for index in range(len(network.subnets)):
             if network.subnets[index] == subnet:
+                for port in network.ports:
+                    for fixed_ip in port.fixed_ips:
+                        if fixed_ip.subnet_id == subnet.id:
+                            port.fixed_ips.remove(fixed_ip)
+                        if len(port.fixed_ips) == 0:
+                            self.remove_port(port)
                 del network.subnets[index]
                 del self.subnet_lookup[subnet.id]
                 break

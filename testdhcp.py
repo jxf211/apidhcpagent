@@ -220,7 +220,7 @@ def delete_port():
 
 
 if __name__ == '__main__':
-    create_net_work()
-    #delete_net_work()
-    #delete_subnet()
+    #create_net_work()
+   # delete_net_work()
+    delete_subnet()
     #delete_port()
