@@ -315,8 +315,15 @@ class DhcpAgent(object):
 
     def network_delete_end(self, req=None, network_id=None,**kwargs):
         try:
-            self.pool.spawn(self._network_delete, network_id)
-            return 200, "ok"
+            msg = "OK"
+            network = self.cache.get_network_by_id(network_id)
+            if network
+                self.pool.spawn(self._network_delete, network_id)
+            else:
+                msg = "network_id: %s. network does not exist" % network_id
+                LOG.debug(msg)
+
+            return 200, msg
         except Exception  as err:
             LOG.error(err)
             raise Exception('Error: %s' % err)
