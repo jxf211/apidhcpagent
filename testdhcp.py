@@ -62,7 +62,7 @@ network = { "id": "44783e1a-63fe-43d5-9989-e1515c24eecd",
                                 }],
                         },
                         {"network_id": "44783e1a-63fe-43d5-9989-e1515c24eecd",
-                        "name":"private-port",
+                        #"name":"private-port",
                         "admin_state_up":True,
                         "id":"cad98138-6e5f-4f83-a4c5-5497fa4758b2",
                         "mac_address": "fa:16:3e:65:29:62",
@@ -71,7 +71,7 @@ network = { "id": "44783e1a-63fe-43d5-9989-e1515c24eecd",
                             [{
                                 u'subnet_id': u'ec1028b2-7cb0-4feb-b974-6b8ea7e7f082',
                                 u'subnet': {
-                                   u'name': u'inter-sub',
+                                   #u'name': u'inter-sub',
                                    u'enable_dhcp': True,
                                    u'network_id': u'8165bc3d-400a-48a0-9186-bf59f7f94b05',
                                    u'tenant_id': u'befa06e66e8047a1929a3912fff2c591',
@@ -92,17 +92,17 @@ network = { "id": "44783e1a-63fe-43d5-9989-e1515c24eecd",
                         },
                        {
                             u'status': u'ACTIVE',
-                            u'binding:host_id': u'jun2',
+                            #u'binding:host_id': u'jun2',
                             u'allowed_address_pairs': [],
                             u'extra_dhcp_opts': [],
                             u'device_owner': u'network:dhcp',
-                            u'binding:profile': {},
+                            #u'binding:profile': {},
                             u'fixed_ips':
                                     [
                                         {
                                         u'subnet_id': u'ec1028b2-7cb0-4feb-b974-6b8ea7e7f082',
                                         u'subnet': {
-                                            u'name': u'inter-sub',
+                                            #u'name': u'inter-sub',
                                             u'enable_dhcp': True,
                                             u'network_id': u'8165bc3d-400a-48a0-9186-bf59f7f94b05',
                                             u'tenant_id': u'befa06e66e8047a1929a3912fff2c591',
@@ -124,7 +124,7 @@ network = { "id": "44783e1a-63fe-43d5-9989-e1515c24eecd",
                                         {
                                         u'subnet_id': u'ec1028b2-7cb0-4feb-b974-6b8ea7e7f08f',
                                         u'subnet': {
-                                            u'name': u'inter-sub',
+                                            #u'name': u'inter-sub',
                                             u'enable_dhcp': True,
                                             u'network_id': u'8165bc3d-400a-48a0-9186-bf59f7f94b05',
                                             u'tenant_id': u'befa06e66e8047a1929a3912fff2c591',
@@ -144,22 +144,22 @@ network = { "id": "44783e1a-63fe-43d5-9989-e1515c24eecd",
                                         }
                                     ],
                             u'id': u'712a2c63-e610-42c9-9ab3-4e8b6540d125',
-                            u'security_groups': [],
+                            #u'security_groups': [],
                             u'device_id': u'dhcp44783e1a-63fe-43d5-9989-e1515c24eecd',
-                            u'name': u'',
+                            #u'name': u'',
                             u'admin_state_up': True,
                             u'network_id': u'1111bc3d-400a-48a0-9186-bf59f7f94b05',
-                            u'tenant_id': u'befa06e66e8047a1929a3912fff2c591',
-                            u'binding:vif_details': {u'port_filter': True},
-                            u'binding:vnic_type': u'normal',
-                            u'binding:vif_type': u'bridge',
+                            #u'tenant_id': u'befa06e66e8047a1929a3912fff2c591',
+                            #u'binding:vif_details': {u'port_filter': True},
+                            #u'binding:vnic_type': u'normal',
+                            #u'binding:vif_type': u'bridge',
 #                            u'mac_address': u'fa:16:3e:65:29:22',
                             }
 
                         ],
         "admin_state_up":True,
         "vlantag":1010,
-        "tenant_id":"befa06e66e8047a1929a3912fff2c591"
+        #"tenant_id":"befa06e66e8047a1929a3912fff2c591"
         }
 
 network_data = {"network": network }
@@ -207,9 +207,10 @@ def delete_subnet():
 def delete_port():
     url =  "http://192.168.49.22:20010/v1/dhcp_port/cad98138-6e5f-4f83-a4c5-5497fa4758b4"
     headers = {'content-type': 'application/json'}
+    payload = json.dumps(network_data)
     try:
         print url
-        r = requests.delete(url, headers = headers, verify=False)
+        r = requests.delete(url, data = payload,headers = headers, verify=False)
         print r
         print r.text, r.tatus_code
     except Exception as e:
@@ -219,7 +220,7 @@ def delete_port():
 
 
 if __name__ == '__main__':
-    #create_net_work()
+    create_net_work()
     #delete_net_work()
     #delete_subnet()
-    delete_port()
+    #delete_port()

@@ -65,8 +65,8 @@ class JSONRequestDeserializer(object):
 
     def from_json(selfm, datastring):
         try:
-            if len(datastring) > 100000:
-                raise exception.RequestLimitExceeded()
+        #    if len(datastring) > 100000:
+        #        raise exception.RequestLimitExceeded()
             return json.loads(datastring)
         except ValueError as ex:
             raise webob.exc.HTTPBadRequest(six, text_type(ex))

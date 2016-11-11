@@ -357,7 +357,7 @@ class DhcpAgent(object):
                 self.cache.remove_subnet(subnet)
                 self.pool.spawn(self._subnet_delete, network.id, network)
             else:
-                LOG.debug("subnet_id: %s. network  does not exist", subnet_id)
+                LOG.debug("subnet_id: %s. subnet does not exist", subnet_id)
         except Exception as err:
             LOG.error(err)
             raise Exception('Err: %s' % err)
@@ -402,7 +402,16 @@ class DhcpAgent(object):
 
     def port_delete_end(self, req=None, port_id=None, **kwargs):
         try:
-            self.pool.spawn(self._port_delete, port_id)
+            payload = json.loads(req.body)
+            LOG.debug("payload:%s", payload)
+            msg = "OK"
+            port = self.cache.get_port_by_id(port_id)
+            if port:
+                self.pool.spawn(self._port_delete, port_id)
+            else:
+                msg = "port_id: %s. PORT does not exist" % port_id
+                LOG.debug(msg)
+            return 200, msg
         except Exception as err:
             LOG.error(err)
             raise Exception('Err: %s' %  err)
@@ -410,11 +419,9 @@ class DhcpAgent(object):
     @utils.synchronized('dhcp-agent')
     def _port_delete(self, port_id):
         """Handle the port.delete.end notification event."""
-        port = self.cache.get_port_by_id(port_id)
-        if port:
-            network = self.cache.get_network_by_id(port.network_id)
-            self.cache.remove_port(port)
-            self.call_driver('reload_allocations', network)
+        network = self.cache.get_network_by_id(port.network_id)
+        self.cache.remove_port(port)
+        self.call_driver('reload_allocations', network)
 
     def default(self, req=None, **kwargs):
         raise exc.HTTPNotFound()
