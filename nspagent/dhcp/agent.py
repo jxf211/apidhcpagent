@@ -295,6 +295,7 @@ class DhcpAgent(object):
             self.enable_dhcp_helper(network_id, network)
         except Exception as err:
             LOG.error(err)
+            LOG.error(traceback.format_exc())
             raise Exception('Error: %s' % err)
 
     def network_updata_end(self, req=None, **kwargs):
