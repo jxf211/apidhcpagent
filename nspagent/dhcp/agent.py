@@ -56,9 +56,6 @@ class DhcpAgent(object):
         self.pool = eventlet.GreenPool(cfg.CONF.num_sync_threads)
         self.cache = NetworkCache()
         self.dhcp_driver_cls = importutils.import_class(self.conf.dhcp_driver)
-        #ctx = context.get_admin_context_without_session()
-        #self.plugin_rpc = DhcpPluginApi(topics.PLUGIN,
-        #                                ctx, self.conf.use_namespaces)
         self.plugin_rpc = None
        # create dhcp dir to store dhcp info
         dhcp_dir = os.path.dirname("/%s/dhcp/" % self.conf.state_path)
@@ -135,7 +132,7 @@ class DhcpAgent(object):
                               {'net_id': network.id, 'action': action})
             LOG.error("enable dhcp err:%s", e)
             LOG.error(traceback.format_exc())
-
+	
     def schedule_resync(self, reason, network=None):
         """Schedule a resync for a given network and reason. If no network is
         specified, resync all networks.
@@ -214,12 +211,8 @@ class DhcpAgent(object):
         if network_rs:
             network = dhcp.NetModel(self.conf.use_namespaces, network_rs)
         else:
-            LOG.err("payload resource no network_id")
-            #network = self.safe_get_network_info(network_id)
+            LOG.err("payload resource no network_rs")
         if network:
-            #pool = eventlet.GreenPool(cfg.CONF.num_sync_threads)
-            #pool.spawn(self.safe_configure_dhcp_for_network, network)
-
             self.configure_dhcp_for_network(network)
 
     @utils.exception_logger()
@@ -252,15 +245,15 @@ class DhcpAgent(object):
         """Refresh or disable DHCP for a network depending on the current state
         of the network.
         """
-        self.call_driver('reload_allocations', network)
-        return
+        #self.call_driver('reload_allocations', network)
         old_network = self.cache.get_network_by_id(network_id)
         if not old_network:
             # DHCP current not running for network.
-           return self.enable_dhcp_helper(network_id)
-
-        #network = self.safe_get_network_info(network_id)
-        #network = dhcp.NetModel(self.conf.use_namespaces, network_rs)
+           return self.enable_dhcp_helper(network_id, network)
+	#LOG.debug("old_network:%s", old_network)
+        #LOG.debug("new_network:%s", network)
+	#network = self.safe_get_network_info(network_id)
+        network = dhcp.NetModel(self.conf.use_namespaces, network)
         if not network:
             return
 
@@ -282,8 +275,9 @@ class DhcpAgent(object):
             payload = json.loads(req.body)
             network_id = payload['network']['id']
             network = payload['network']
-            self.pool.spawn(self._network_create, network_id, network)
-            return  200, "OK"
+            #self.pool.spawn(self._network_create, network_id, network)
+            self._network_create(network_id, network)
+	    return  200, "OK"
         except Exception as err:
             LOG.error(err)
             raise Exception('Error: %s' % err)
@@ -303,8 +297,9 @@ class DhcpAgent(object):
             payload = json.loads(req.body)
             network_id = payload['network']['id']
             network = payload['network']
-            self.pool.spawn(self._network_updata, network_id, network)
-            return 200, "OK"
+            #self.pool.spawn(self._network_updata, network_id, network)
+	    self._network_updata(network_id, network)
+            return 200, "success"
         except Exception as err:
             LOG.error(err)
             raise Exception('Error: %s' % err)
@@ -319,11 +314,11 @@ class DhcpAgent(object):
             msg = "OK"
             network = self.cache.get_network_by_id(network_id)
             if network:
-                self.pool.spawn(self._network_delete, network_id)
-            else:
+                #self.pool.spawn(self._network_delete, network_id)
+            	self._network_delete(network_id)
+	    else:
                 msg = "network_id: %s. network does not exist" % network_id
                 LOG.debug(msg)
-
             return 200, msg
         except Exception  as err:
             LOG.error(err)
@@ -340,11 +335,16 @@ class DhcpAgent(object):
 
     def subnet_update_end(self, req=None, **kwargs):
         try:
+	    msg = 'SUCCESS'
             payload = json.loads(req.body)
-            network_id = payload['subnet']['network_id']
+            #network_id = payload['subnet']['network_id']
             network = payload['network']
-            slef.spool.pawn(self._subnet_update, network_id, network)
-        except Exception as err:
+            network_id = network['id']
+	    LOG.debug("network:%s", network)
+	    #self.pool.spawn(self._subnet_update, network_id, network)
+            self._subnet_update(network_id, network)
+	    return 200, msg
+	except Exception as err:
             LOG.error(err)
             raise Exception('Err: %s ' % err)
 
@@ -363,8 +363,9 @@ class DhcpAgent(object):
                 LOG.debug("hehhh")
                 network = self.cache.get_network_by_subnet_id(subnet_id)
                 self.cache.remove_subnet(subnet)
-                self.pool.spawn(self._subnet_delete, network.id, network)
-            else:
+                #self.pool.spawn(self._subnet_delete, network.id, network)
+            	self._subnet_delete(network.id, network)
+	    else:
                 LOG.debug("subnet_id: %s. subnet does not exist", subnet_id)
         except Exception as err:
             LOG.error(err)
@@ -378,9 +379,10 @@ class DhcpAgent(object):
     def port_update_end(self, req=None, **kwargs):
         try:
             payload = json.loads(req.body)
-            updated_port = dhcp.DictModel(payload['port'])
-            self.pool.spawn(self._port_update, updated_port)
-        except Exception as err:
+            updated_port = dhcp.DictModel(payload)
+            #self.pool.spawn(self._port_update, updated_port)
+            self._port_update(updated_port)
+	except Exception as err:
             LOG.error(err)
             raise Exception('Err: %s' % err)
 
@@ -391,7 +393,7 @@ class DhcpAgent(object):
         if network:
             driver_action = 'reload_allocations'
             if self._is_port_on_this_agent(updated_port):
-                orig = self.cache.get_port_by_id(updated_port['id'])
+                orig = self.cache.get_port_by_id(updated_port.id)
                 # assume IP change if not in cache
                 old_ips = {i['ip_address'] for i in orig['fixed_ips'] or []}
                 new_ips = {i['ip_address'] for i in updated_port['fixed_ips']}
@@ -415,8 +417,9 @@ class DhcpAgent(object):
             msg = "OK"
             port = self.cache.get_port_by_id(port_id)
             if port:
-                self.pool.spawn(self._port_delete, port_id)
-            else:
+                #self.pool.spawn(self._port_delete, port_id)
+            	self._port_delete(port_id)
+	    else:
                 msg = "port_id: %s. PORT does not exist" % port_id
                 LOG.debug(msg)
             return 200, msg
