@@ -132,7 +132,7 @@ class DhcpAgent(object):
                               {'net_id': network.id, 'action': action})
             LOG.error("enable dhcp err:%s", e)
             LOG.error(traceback.format_exc())
-	
+
     def schedule_resync(self, reason, network=None):
         """Schedule a resync for a given network and reason. If no network is
         specified, resync all networks.
@@ -278,6 +278,7 @@ class DhcpAgent(object):
             #self.pool.spawn(self._network_create, network_id, network)
             self._network_create(network_id, network)
 	    return  200, "SUCCESS"
+
         except Exception as err:
             LOG.error(err)
             raise Exception('Error: %s' % err)
@@ -299,7 +300,11 @@ class DhcpAgent(object):
             network = payload['network']
             #self.pool.spawn(self._network_updata, network_id, network)
 	    self._network_updata(network_id, network)
+<<<<<<< HEAD
             return 200, "SUCCESS"
+=======
+            return 200, "success"
+>>>>>>> 4b9d7e01ddbd3094db8e575bdc2025b1fd30907b
         except Exception as err:
             LOG.error(err)
             raise Exception('Error: %s' % err)
@@ -342,7 +347,11 @@ class DhcpAgent(object):
             network_id = network['id']
 	    LOG.debug("network:%s", network)
 	    #self.pool.spawn(self._subnet_update, network_id, network)
+<<<<<<< HEAD
             ret = self._subnet_update(network_id, network)
+=======
+            self._subnet_update(network_id, network)
+>>>>>>> 4b9d7e01ddbd3094db8e575bdc2025b1fd30907b
 	    return 200, msg
 	except Exception as err:
             LOG.error(err)
