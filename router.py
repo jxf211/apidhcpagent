@@ -264,8 +264,17 @@ class API(Router):
                         'action':'network_delete_end',
                         'method':'DELETE'
                     },
+			
+                    
+		    {
+                        'name':'subnet_create_end',
+                        'url':'/dhcp_subnet/',
+                        'action':'subnet_create_end',
+                        'method':'POST'
+                    },
 
-                    {
+ 
+		    {
                         'name':'subnet_update_end',
                         'url':'/dhcp_subnet/',
                         'action':'subnet_update_end',
