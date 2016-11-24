@@ -244,14 +244,10 @@ class DhcpAgent(object):
         """Refresh or disable DHCP for a network depending on the current state
         of the network.
         """
-        #self.call_driver('reload_allocations', network)
         old_network = self.cache.get_network_by_id(network_id)
         if not old_network:
             # DHCP current not running for network.
            return self.enable_dhcp_helper(network_id, network)
-	#LOG.debug("old_network:%s", old_network)
-        #LOG.debug("new_network:%s", network)
-	#network = self.safe_get_network_info(network_id)
         network = dhcp.NetModel(self.conf.use_namespaces, network)
         if not network:
             return
@@ -276,8 +272,8 @@ class DhcpAgent(object):
             network = payload['network']
             #self.pool.spawn(self._network_create, network_id, network)
             self._network_create(network_id, network)
-	    LOG.debug("network_info:%s", self.cache.get_state())
-	    return  200, "SUCCESS"
+            LOG.debug("network_info:%s", self.cache.get_state())
+            return  200, "SUCCESS"
         except Exception as err:
             LOG.error(err)
             raise Exception('Error: %s' % err)
@@ -298,7 +294,7 @@ class DhcpAgent(object):
             network_id = payload['network']['id']
             network = payload['network']
             #self.pool.spawn(self._network_updata, network_id, network)
-	        self._network_updata(network_id, network)
+            self._network_updata(network_id, network)
             return 200, "SUCCESS"
         except Exception as err:
             LOG.error(err)
@@ -315,8 +311,8 @@ class DhcpAgent(object):
             network = self.cache.get_network_by_id(network_id)
             if network:
                 #self.pool.spawn(self._network_delete, network_id)
-            	self._network_delete(network_id)
-	    else:
+                self._network_delete(network_id)
+            else:
                 msg = "network_id: %s. network does not exist" % network_id
                 LOG.debug(msg)
             return 200, msg
@@ -335,16 +331,15 @@ class DhcpAgent(object):
 
     def subnet_update_end(self, req=None, **kwargs):
         try:
-	    msg = 'SUCCESS'
+            msg = 'SUCCESS'
             payload = json.loads(req.body)
-            #network_id = payload['subnet']['network_id']
             network = payload['network']
             network_id = network['id']
-	        #self.pool.spawn(self._subnet_update, network_id, network)
-	        LOG.debug("network_info:%s", self.cache.get_state())
+            #self.pool.spawn(self._subnet_update, network_id, network)
+            LOG.debug("network_info:%s", self.cache.get_state())
             ret = self._subnet_update(network_id, network)
-	        return 200, msg
-	except Exception as err:
+            return 200, msg
+        except Exception as err:
             LOG.error(err)
             raise Exception('Err: %s ' % err)
 
@@ -360,12 +355,11 @@ class DhcpAgent(object):
         try:
             subnet = self.cache.get_subnet_by_id(subnet_id)
             if subnet:
-                LOG.debug("hehhh")
                 network = self.cache.get_network_by_subnet_id(subnet_id)
                 self.cache.remove_subnet(subnet)
                 #self.pool.spawn(self._subnet_delete, network.id, network)
-            	self._subnet_delete(network.id, network)
-	    else:
+                self._subnet_delete(network.id, network)
+            else:
                 LOG.debug("subnet_id: %s. subnet does not exist", subnet_id)
         except Exception as err:
             LOG.error(err)
@@ -380,14 +374,14 @@ class DhcpAgent(object):
         try:
             payload = json.loads(req.body)
             updated_port = dhcp.DictModel(payload)
-	        LOG.debug("updated_port:%s", updated_port)
-	        if updated_port:
+            LOG.debug("updated_port:%s", updated_port)
+            if updated_port:
                 #self.pool.spawn(self._port_update, updated_port)
-	            self._port_update(updated_port)
-	        else:
-		        LOG.debug("updated_port:%s", updated_port)
-	        return 200, "SUCCESS"
-	except Exception as err:
+                self._port_update(updated_port)
+            else:
+                LOG.debug("updated_port is NULL")
+                return 200, "SUCCESS"
+        except Exception as err:
             LOG.error(err)
             raise Exception('Err: %s' % err)
 
@@ -395,32 +389,30 @@ class DhcpAgent(object):
     def _port_update(self, updated_port):
         """Handle the port.update.end notification event."""
         network = self.cache.get_network_by_id(updated_port.network_id)
-	LOG.debug("network:%s", network)
         if network:
             driver_action = 'reload_allocations'
-            if self._is_port_on_this_agent(updated_port):
-                orig = self.cache.get_port_by_id(updated_port.id)
-		        if orig:
-                    # assume IP change if not in cache
-                    old_ips = {i['ip_address'] for i in orig['fixed_ips'] or []}
-		        else:
-		            old_ips = {}
-
+            orig = self.cache.get_port_by_id(updated_port.id)
+            if orig:
                 # assume IP change if not in cache
-                new_ips = {i['ip_address'] for i in updated_port['fixed_ips']}
-                if old_ips != new_ips:
-                    driver_action = 'restart'
+                old_ips = {i['ip_address'] for i in orig['fixed_ips'] or []}
+            else:
+                old_ips = {}
+
+            # assume IP change if not in cache
+            new_ips = {i['ip_address'] for i in updated_port['fixed_ips']}
+            if old_ips != new_ips:
+                driver_action = 'restart'
             self.cache.put_port(updated_port)
             self.call_driver(driver_action, network)
-	else:
+        else:
             msg = "network_id: %s. network does not exist" % network_id
-	    LOG.debug(msg)
+            LOG.debug(msg)
 
     def _is_port_on_this_agent(self, port):
         thishost = utils.get_dhcp_agent_device_id(
             port['network_id'], self.conf.host)
         return True
-	#return port['device_id'] == thishost
+        #return port['device_id'] == thishost
 
     # Use the update handler for the port create event.
     port_create_end = port_update_end
@@ -431,8 +423,8 @@ class DhcpAgent(object):
             port = self.cache.get_port_by_id(port_id)
             if port:
                 #self.pool.spawn(self._port_delete, port_id)
-            	self._port_delete(port_id)
-	    else:
+                self._port_delete(port_id)
+            else:
                 msg = "port_id: %s. PORT does not exist" % port_id
                 LOG.debug(msg)
             return 200, msg

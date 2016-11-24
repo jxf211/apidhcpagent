@@ -429,7 +429,7 @@ class Dnsmasq(DhcpLocalProcess):
         self._release_unused_leases()
         self._spawn_or_reload_process(reload_with_HUP=True)
         LOG.debug('Reloading allocations for network: %s interface_name:%s',
-						self.network.id, self.interface_name)
+                                            self.network.id, self.interface_name)
         self.device_manager.update(self.network, self.interface_name)
 
     def _sort_fixed_ips_for_dnsmasq(self, fixed_ips, v6_nets):
@@ -541,8 +541,8 @@ class Dnsmasq(DhcpLocalProcess):
             port, alloc, hostname, name, no_dhcp, no_opts = host_tuple
             # don't write ip address which belongs to a dhcp disabled subnet
             # or an IPv6 SLAAC/stateless subnet
-	    if port.device_owner == 'network:dhcp':
-	        continue
+            if port.device_owner == 'network:dhcp':
+                continue
             if no_dhcp or alloc.subnet_id not in dhcp_enabled_subnet_ids:
                 continue
 
@@ -592,9 +592,8 @@ class Dnsmasq(DhcpLocalProcess):
         # avoid potential performance drop when lots of hosts are dumped
         for host_tuple in self._iter_hosts():
             port, alloc, hostname, name, no_dhcp, no_opts = host_tuple
-	    if port.device_owner == 'network:dhcp':
-		continue
-            #LOG.debug("host_tuple:%s", host_tuple)
+            if port.device_owner == 'network:dhcp':
+                continue
             if no_dhcp:
                 if not no_opts and getattr(port, 'extra_dhcp_opts', False):
                     buf.write('%s,%s%s\n' %
@@ -634,18 +633,18 @@ class Dnsmasq(DhcpLocalProcess):
 
         new_leases = set()
         for port in self.network.ports:
-	    LOG.debug("port:%s", port)
+            LOG.debug("port:%s", port)
             for alloc in port.fixed_ips:
-		if port.device_owner != 'network:dhcp':
+                if port.device_owner != 'network:dhcp':
                     new_leases.add((alloc.ip_address, port.mac_address))
 
-	if old_leases == new_leases:
-	    LOG.debug("old_leases == new_leases")
-	    return
+        if old_leases == new_leases:
+            LOG.debug("old_leases == new_leases")
+            return
 
-	self._output_init_lease_file()
+        self._output_init_lease_file()
         for ip, mac in old_leases - new_leases:
-	    LOG.debug("IP:%s, MAC:%s", ip, mac)
+        LOG.debug("IP:%s, MAC:%s", ip, mac)
             self._release_lease(mac, ip)
 
 
@@ -664,8 +663,8 @@ class Dnsmasq(DhcpLocalProcess):
             port, alloc, hostname, fqdn, no_dhcp, no_opts = host_tuple
             # It is compulsory to write the `fqdn` before the `hostname` in
             # order to obtain it in PTR responses.
-	    if port.device_owner == 'network:dhcp':
-		continue
+            if port.device_owner == 'network:dhcp':
+                continue
             if alloc:
                 buf.write('%s\t%s %s\n' % (alloc.ip_address, fqdn, hostname))
         addn_hosts = self.get_conf_file_name('addn_hosts')
@@ -1004,9 +1003,6 @@ class DeviceManager(object):
                 if dhcp_enabled_subnet_ids or ips_needs_removal:
                     port_fixed_ips.extend(
                         [dict(subnet_id=s) for s in dhcp_enabled_subnet_ids])
-                    #dhcp_port = self.plugin.update_dhcp_port(
-                    #    port.id, {'port': {'network_id': network.id,
-                    #i                       'fixed_ips': port_fixed_ips}})
                     if not dhcp_port:
                         raise exceptions.Conflict()
                 else:
@@ -1041,12 +1037,7 @@ class DeviceManager(object):
     def setup(self, network):
         """Create and initialize a device for network's DHCP on this host."""
         port = self.setup_dhcp_port(network)
-	#for port in network.ports:
-        #    if port['device_owner'] == 'network:dhcp':
-	#	dhcp_port = copy.deepcopy(port)
-
-	#interface_name = self.get_interface_name(network, port)
-	interface_name = network['interfacename']
+        interface_name = network['interfacename']
         LOG.debug("DHCP_PORT :%s", port)
         LOG.debug("DPCP_PORT_NAME: %s", interface_name)
         if ip_lib.ensure_device_is_ready(interface_name,
@@ -1069,7 +1060,8 @@ class DeviceManager(object):
                 self.set_tag(interface_name, tag)
         else:
             LOG.debug("No vlantag exists for network %s", network.id)
-	ip_cidrs = []
+
+        ip_cidrs = []
         for fixed_ip in port.fixed_ips:
             LOG.debug("fixed_ip.subnet:%s", fixed_ip.subnet)
             subnet = fixed_ip.subnet
@@ -1078,9 +1070,6 @@ class DeviceManager(object):
                 ip_cidr = '%s/%s' % (fixed_ip.ip_address, net.prefixlen)
                 ip_cidrs.append(ip_cidr)
 
-	#if (self.conf.enable_isolated_metadata and
-        #    self.conf.use_namespaces):
-        #    ip_cidrs.append(METADATA_DEFAULT_CIDR)
 
         self.driver.init_l3(interface_name, ip_cidrs,
                             namespace=network.namespace)
