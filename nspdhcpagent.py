@@ -9,7 +9,7 @@ import sys
 import traceback
 import logging as syslog
 from oslo_config import cfg
-#from utils import get_ip_address
+from utils import get_ip_address
 from common import config as common_config
 from nspagent.dhcpcommon import config
 from nspagent.dhcp.linux import interface
@@ -68,7 +68,8 @@ class DeamonMain(daemon.Daemon):
         cfg.CONF.register_cli_opts(common_cli_opts)
 
 if __name__== '__main__':
-    main = DeamonMain("192.168.49.22", "20010", '/var/dhcpagent/pid')
+    local_ctrl_ip = get_ip_address("nspbr0")
+    main = DeamonMain('172.16.1.108', "20010", '/var/dhcpagent/pid')
     if cfg.CONF.daemon:
         main.start()
     else:

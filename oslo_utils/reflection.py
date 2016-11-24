@@ -35,6 +35,7 @@ except AttributeError:
 # others)...
 _BUILTIN_MODULES = ('builtins', '__builtin__', '__builtins__', 'exceptions')
 
+'''
 if six.PY3:
     Parameter = inspect.Parameter
     Signature = inspect.Signature
@@ -45,7 +46,7 @@ else:
     Parameter = funcsigs.Parameter
     Signature = funcsigs.Signature
     get_signature = funcsigs.signature
-
+'''
 
 def get_members(obj, exclude_hidden=True):
     """Yields the members of an object, filtering by hidden/not hidden.
@@ -192,7 +193,7 @@ def is_subclass(obj, cls):
     """Returns if the object is class and it is subclass of a given class."""
     return inspect.isclass(obj) and issubclass(obj, cls)
 
-
+'''
 def get_callable_args(function, required_only=False):
     """Get names of callable arguments.
 
@@ -216,3 +217,4 @@ def accepts_kwargs(function):
     sig = get_signature(function)
     return any(p.kind == Parameter.VAR_KEYWORD
                for p in six.itervalues(sig.parameters))
+'''

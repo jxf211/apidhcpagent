@@ -224,7 +224,7 @@ class OVSInterfaceDriver(LinuxInterfaceDriver):
         ovs = ovs_lib.OVSBridge(bridge)
         ovs.replace_port(device_name, *attrs)
 
-    def plug(self, network_id, port_id, device_name, mac_address,
+    def plug(self, network_id, port_id=None, device_name=None, mac_address=None,
              bridge=None, namespace=None, prefix=None):
         """Plug in the interface."""
         if not bridge:
@@ -266,6 +266,7 @@ class OVSInterfaceDriver(LinuxInterfaceDriver):
             if self.conf.ovs_use_veth:
                 root_dev.link.set_up()
         else:
+	    
             LOG.info(("Device %s already exists"), device_name)
 
     def unplug(self, device_name, bridge=None, namespace=None, prefix=None):
