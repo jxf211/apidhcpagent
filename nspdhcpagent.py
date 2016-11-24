@@ -69,7 +69,7 @@ class DeamonMain(daemon.Daemon):
 
 if __name__== '__main__':
     local_ctrl_ip = get_ip_address("nspbr0")
-    main = DeamonMain('172.16.1.108', "20010", '/var/dhcpagent/pid')
+    main = DeamonMain(local_ctrl_ip, "20010", '/var/dhcpagent/pid')
     if cfg.CONF.daemon:
         main.start()
     else:

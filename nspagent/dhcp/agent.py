@@ -131,7 +131,7 @@ class DhcpAgent(object):
                               {'net_id': network.id, 'action': action})
             LOG.error("enable dhcp err:%s", e)
             LOG.error(traceback.format_exc())
-	
+
     def schedule_resync(self, reason, network=None):
         """Schedule a resync for a given network and reason. If no network is
         specified, resync all networks.
@@ -298,7 +298,7 @@ class DhcpAgent(object):
             network_id = payload['network']['id']
             network = payload['network']
             #self.pool.spawn(self._network_updata, network_id, network)
-	    self._network_updata(network_id, network)
+	        self._network_updata(network_id, network)
             return 200, "SUCCESS"
         except Exception as err:
             LOG.error(err)
@@ -337,13 +337,13 @@ class DhcpAgent(object):
         try:
 	    msg = 'SUCCESS'
             payload = json.loads(req.body)
+            #network_id = payload['subnet']['network_id']
             network = payload['network']
             network_id = network['id']
-	    LOG.debug("network:%s", network)
-	    #self.pool.spawn(self._subnet_update, network_id, network)
+	        #self.pool.spawn(self._subnet_update, network_id, network)
+	        LOG.debug("network_info:%s", self.cache.get_state())
             ret = self._subnet_update(network_id, network)
-	    LOG.debug("network_info:%s", self.cache.get_state())
-	    return 200, msg
+	        return 200, msg
 	except Exception as err:
             LOG.error(err)
             raise Exception('Err: %s ' % err)
@@ -380,13 +380,13 @@ class DhcpAgent(object):
         try:
             payload = json.loads(req.body)
             updated_port = dhcp.DictModel(payload)
-	    LOG.debug("updated_port:%s", updated_port)
-	    if updated_port:
+	        LOG.debug("updated_port:%s", updated_port)
+	        if updated_port:
                 #self.pool.spawn(self._port_update, updated_port)
-	        self._port_update(updated_port)
-	    else:
-		LOG.debug("updated_port:%s", updated_port)
-	    return 200, "SUCCESS" 
+	            self._port_update(updated_port)
+	        else:
+		        LOG.debug("updated_port:%s", updated_port)
+	        return 200, "SUCCESS"
 	except Exception as err:
             LOG.error(err)
             raise Exception('Err: %s' % err)
@@ -400,12 +400,13 @@ class DhcpAgent(object):
             driver_action = 'reload_allocations'
             if self._is_port_on_this_agent(updated_port):
                 orig = self.cache.get_port_by_id(updated_port.id)
-		if orig:
+		        if orig:
                     # assume IP change if not in cache
                     old_ips = {i['ip_address'] for i in orig['fixed_ips'] or []}
-		else:
-		    old_ips = {}
+		        else:
+		            old_ips = {}
 
+                # assume IP change if not in cache
                 new_ips = {i['ip_address'] for i in updated_port['fixed_ips']}
                 if old_ips != new_ips:
                     driver_action = 'restart'

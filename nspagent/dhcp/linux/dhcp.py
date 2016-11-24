@@ -428,7 +428,7 @@ class Dnsmasq(DhcpLocalProcess):
 
         self._release_unused_leases()
         self._spawn_or_reload_process(reload_with_HUP=True)
-        LOG.debug('Reloading allocations for network: %s interface_name:%s', 
+        LOG.debug('Reloading allocations for network: %s interface_name:%s',
 						self.network.id, self.interface_name)
         self.device_manager.update(self.network, self.interface_name)
 
@@ -638,16 +638,16 @@ class Dnsmasq(DhcpLocalProcess):
             for alloc in port.fixed_ips:
 		if port.device_owner != 'network:dhcp':
                     new_leases.add((alloc.ip_address, port.mac_address))
-	
+
 	if old_leases == new_leases:
 	    LOG.debug("old_leases == new_leases")
-	    return 	
-	
+	    return
+
 	self._output_init_lease_file()
         for ip, mac in old_leases - new_leases:
 	    LOG.debug("IP:%s, MAC:%s", ip, mac)
             self._release_lease(mac, ip)
-	
+
 
     def _output_addn_hosts_file(self):
         """Writes a dnsmasq compatible additional hosts file.
@@ -1044,7 +1044,7 @@ class DeviceManager(object):
 	#for port in network.ports:
         #    if port['device_owner'] == 'network:dhcp':
 	#	dhcp_port = copy.deepcopy(port)
-	    
+
 	#interface_name = self.get_interface_name(network, port)
 	interface_name = network['interfacename']
         LOG.debug("DHCP_PORT :%s", port)
@@ -1077,7 +1077,7 @@ class DeviceManager(object):
                 net = netaddr.IPNetwork(subnet.cidr)
                 ip_cidr = '%s/%s' % (fixed_ip.ip_address, net.prefixlen)
                 ip_cidrs.append(ip_cidr)
-        
+
 	#if (self.conf.enable_isolated_metadata and
         #    self.conf.use_namespaces):
         #    ip_cidrs.append(METADATA_DEFAULT_CIDR)

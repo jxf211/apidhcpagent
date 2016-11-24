@@ -24,6 +24,7 @@ fi
 
 
 if [ ! -f /usr/bin/dhcp_release ]; then
+<<<<<<< HEAD
    cp ./dhcp_release  /usr/bin/dhcp_release
 fi
 
@@ -31,3 +32,12 @@ fi
 --config-file /etc/dhcpagent/etc/dhcp_agent.ini \
 --log-file /var/log/dhcpagent/nspdhcpagent.log \
 -m
+=======
+   cp ./dhcp_realease  /usr/bin/dhcp_release
+fi
+
+./nspdhcpagent.py --config-file  /etc/dhcpagent/etc/dhcp_agent.conf \
+--config-file /etc/dhcpagent/etc/dhcp_agent.ini \
+--log-file /var/log/dhcpagent/nspdhcpagent.log \
+-m 
+>>>>>>> 559dc79d40a24395fd9f02377562a04768465e2c
