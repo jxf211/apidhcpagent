@@ -205,7 +205,7 @@ class DhcpAgent(object):
             network_id = payload['network']['id']
             network = payload['network']
             #self.pool.spawn(self._network_updata, network_id, network)
-	    self._network_updata(network_id, network)
+            self._network_updata(network_id, network)
             return 200, "SUCCESS"
         except Exception as err:
             LOG.error(err)
@@ -246,10 +246,9 @@ class DhcpAgent(object):
             payload = json.loads(req.body)
             network = payload['network']
             network_id = network['id']
-            LOG.debug("network:%s", network)
             #self.pool.spawn(self._subnet_update, network_id, network)
-            ret = self._subnet_update(network_id, network)
             LOG.debug("network_info:%s", self.cache.get_state())
+            ret = self._subnet_update(network_id, network)
             return 200, msg
         except Exception as err:
             LOG.error(err)
@@ -270,8 +269,8 @@ class DhcpAgent(object):
                 network = self.cache.get_network_by_subnet_id(subnet_id)
                 self.cache.remove_subnet(subnet)
                 #self.pool.spawn(self._subnet_delete, network.id, network)
-            	self._subnet_delete(network.id, network)
-	    else:
+                self._subnet_delete(network.id, network)
+            else:
                 LOG.debug("subnet_id: %s. subnet does not exist", subnet_id)
         except Exception as err:
             LOG.error(err)
@@ -292,7 +291,7 @@ class DhcpAgent(object):
                 self._port_update(updated_port)
             else:
                 LOG.debug("updated_port is NULL")
-            return 200, "SUCCESS" 
+                return 200, "SUCCESS"
         except Exception as err:
             LOG.error(err)
             raise Exception('Err: %s' % err)
@@ -325,7 +324,7 @@ class DhcpAgent(object):
         thishost = utils.get_dhcp_agent_device_id(
             port['network_id'], self.conf.host)
         return True
-       #return port['device_id'] == thishost
+        #return port['device_id'] == thishost
 
     # Use the update handler for the port create event.
     port_create_end = port_update_end

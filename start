@@ -24,10 +24,11 @@ fi
 
 
 if [ ! -f /usr/bin/dhcp_release ]; then
-   cp ./dhcp_release  /usr/bin/dhcp_release
+    cp ./dhcp_release  /usr/bin/dhcp_release
 fi
 
 ./nspdhcpagent.py  --config-file  /etc/dhcpagent/etc/dhcp_agent.conf \
 --config-file /etc/dhcpagent/etc/dhcp_agent.ini \
---log-file /var/log/dhcpagent/nspdhcpagent.log 
-#-m
+--log-file /var/log/dhcpagent/nspdhcpagent.log \
+-m
+
