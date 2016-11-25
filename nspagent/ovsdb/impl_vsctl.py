@@ -17,7 +17,7 @@ import itertools
 import uuid
 
 from oslo_log import log as logging
-from oslo_serialization import jsonutils
+from oslo_utils import jsonutils
 from oslo_utils import excutils
 
 from nspagent.dhcpcommon import utils

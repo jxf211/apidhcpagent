@@ -20,7 +20,7 @@ import threading
 import six
 from six import moves
 
-from oslo_serialization import jsonutils
+from oslo_utils import jsonutils
 
 _request_store = threading.local()
 

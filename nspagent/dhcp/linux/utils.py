@@ -37,8 +37,6 @@ from oslo_utils import excutils
 from nspagent.dhcpcommon import config
 from common import constants
 from common import utils
-#from neutron import wsgi
-
 
 LOG = logging.getLogger(__name__)
 config.register_root_helper(cfg.CONF)

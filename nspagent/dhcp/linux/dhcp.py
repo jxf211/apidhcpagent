@@ -1,4 +1,4 @@
-# Copyright 2012 OpenStack Foundation
+## Copyright 2012 OpenStack Foundation
 # All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -23,7 +23,7 @@ import time
 import netaddr
 from oslo_config import cfg
 from oslo_log import log as logging
-from oslo_utils import importutils, excutils
+from oslo_utils import importutils
 import six
 from nspagent.dhcpcommon import ovs_lib
 import external_process
@@ -35,6 +35,7 @@ from common import exceptions
 from common import ipv6_utils
 from common import utils as commonutils
 from common import uuidutils
+import copy
 
 LOG = logging.getLogger(__name__)
 
@@ -292,6 +293,7 @@ class Dnsmasq(DhcpLocalProcess):
     def existing_dhcp_networks(cls, conf):
         """Return a list of existing networks ids that we have configs for."""
         confs_dir = cls.get_confs_dir(conf)
+	LOG.debug("confs_dir:%s", confs_dir)
         try:
             return [
                 c for c in os.listdir(confs_dir)
@@ -427,7 +429,8 @@ class Dnsmasq(DhcpLocalProcess):
 
         self._release_unused_leases()
         self._spawn_or_reload_process(reload_with_HUP=True)
-        LOG.debug('Reloading allocations for network: %s', self.network.id)
+        LOG.debug('Reloading allocations for network: %s interface_name:%s', 
+						self.network.id, self.interface_name)
         self.device_manager.update(self.network, self.interface_name)
 
     def _sort_fixed_ips_for_dnsmasq(self, fixed_ips, v6_nets):
@@ -539,6 +542,8 @@ class Dnsmasq(DhcpLocalProcess):
             port, alloc, hostname, name, no_dhcp, no_opts = host_tuple
             # don't write ip address which belongs to a dhcp disabled subnet
             # or an IPv6 SLAAC/stateless subnet
+            if port.device_owner == 'network:dhcp':
+                 continue
             if no_dhcp or alloc.subnet_id not in dhcp_enabled_subnet_ids:
                 continue
 
@@ -588,7 +593,9 @@ class Dnsmasq(DhcpLocalProcess):
         # avoid potential performance drop when lots of hosts are dumped
         for host_tuple in self._iter_hosts():
             port, alloc, hostname, name, no_dhcp, no_opts = host_tuple
-            LOG.debug("host_tuple:%s", host_tuple)
+            if port.device_owner == 'network:dhcp':
+                continue
+            #LOG.debug("host_tuple:%s", host_tuple)
             if no_dhcp:
                 if not no_opts and getattr(port, 'extra_dhcp_opts', False):
                     buf.write('%s,%s%s\n' %
@@ -628,11 +635,20 @@ class Dnsmasq(DhcpLocalProcess):
 
         new_leases = set()
         for port in self.network.ports:
+            LOG.debug("port:%s", port)
             for alloc in port.fixed_ips:
-                new_leases.add((alloc.ip_address, port.mac_address))
+                if port.device_owner != 'network:dhcp':
+                    new_leases.add((alloc.ip_address, port.mac_address))
 
+        if old_leases == new_leases:
+            LOG.debug("old_leases == new_leases")
+            return 
+
+        self._output_init_lease_file()
         for ip, mac in old_leases - new_leases:
+            LOG.debug("IP:%s, MAC:%s", ip, mac)
             self._release_lease(mac, ip)
+
 
     def _output_addn_hosts_file(self):
         """Writes a dnsmasq compatible additional hosts file.
@@ -649,6 +665,8 @@ class Dnsmasq(DhcpLocalProcess):
             port, alloc, hostname, fqdn, no_dhcp, no_opts = host_tuple
             # It is compulsory to write the `fqdn` before the `hostname` in
             # order to obtain it in PTR responses.
+            if port.device_owner == 'network:dhcp':
+                continue
             if alloc:
                 buf.write('%s\t%s %s\n' % (alloc.ip_address, fqdn, hostname))
         addn_hosts = self.get_conf_file_name('addn_hosts')
@@ -927,7 +945,7 @@ class DeviceManager(object):
         LOG.debug("gateway:%s", gateway)
         if gateway:
             gateway = gateway['gateway']
-        LOG.debug("network:%s", network)
+        #LOG.debug("network:%s", network)
         for subnet in network.subnets:
             LOG.debug("subnet :%s", subnet)
             skip_subnet = (
@@ -969,8 +987,8 @@ class DeviceManager(object):
 
         dhcp_port = None
         for port in network.ports:
-            port_device_id = getattr(port, 'device_id', None)
-            if port_device_id == device_id:
+            port_device_id = getattr(port, 'device_owner', None)
+            if port_device_id ==  "network:dhcp":
                 port_fixed_ips = []
                 ips_needs_removal = False
                 for fixed_ip in port.fixed_ips:
@@ -994,7 +1012,6 @@ class DeviceManager(object):
                         raise exceptions.Conflict()
                 else:
                     dhcp_port = port
-                    network.ports.remove(port)
 
                 # break since we found port that matches device_id
                 break
@@ -1025,7 +1042,8 @@ class DeviceManager(object):
     def setup(self, network):
         """Create and initialize a device for network's DHCP on this host."""
         port = self.setup_dhcp_port(network)
-        interface_name = self.get_interface_name(network, port)
+
+        interface_name = network['interfacename']
         LOG.debug("DHCP_PORT :%s", port)
         LOG.debug("DPCP_PORT_NAME: %s", interface_name)
         if ip_lib.ensure_device_is_ready(interface_name,
@@ -1036,7 +1054,7 @@ class DeviceManager(object):
             self.driver.plug(network.id,
                              port.id,
                              interface_name,
-                             port.get("mac_address", None),
+                             None,
                              namespace=network.namespace)
             self.fill_dhcp_udp_checksums(namespace=network.namespace)
 
@@ -1056,10 +1074,6 @@ class DeviceManager(object):
                 net = netaddr.IPNetwork(subnet.cidr)
                 ip_cidr = '%s/%s' % (fixed_ip.ip_address, net.prefixlen)
                 ip_cidrs.append(ip_cidr)
-
-        if (self.conf.enable_isolated_metadata and
-            self.conf.use_namespaces):
-            ip_cidrs.append(METADATA_DEFAULT_CIDR)
 
         self.driver.init_l3(interface_name, ip_cidrs,
                             namespace=network.namespace)
@@ -1095,38 +1109,6 @@ class DeviceManager(object):
                      % constants.DHCP_RESPONSE_PORT)
         iptables_mgr.ipv4['mangle'].add_rule('POSTROUTING', ipv4_rule)
         iptables_mgr.apply()
-
-    def ensure_vlan(self, physical_interface, vlan_id):
-        interface = self.get_subinterface_name(physical_interface, vlan_id)
-        interface = physical_interface
-        if not ip_lib.device_exists(interface):
-            LOG.debug("Creating subinterface %(interface)s for "
-                      "VLAN %(vlan_id)s on interface "
-                      "%(physical_interface)s",
-                      {'interface': interface, 'vlan_id': vlan_id,
-                       'physical_interface': physical_interface})
-            try:
-                ip = ip_lib.IPWrapper()
-                int_vlan = ip.add_vlan(interface, physical_interface,
-                                    vlan_id)
-            except RuntimeError:
-                with excutils.save_and_reraise_exception() as ctxt:
-                    if ip_lib.vlan_in_use(vlan_id):
-                        ctxt.reraise = False
-                        LOG.error(("Unable to create VLAN interface for "
-                                   "VLAN ID %s because it is in use by "
-                                   "another interface."), vlan_id)
-            int_vlan.disable_ipv6()
-            int_vlan.link.set_up()
-            LOG.debug("Done creating subinterface %s", interface)
-        return interface
-
-    def get_subinterface_name(self, physical_interface, vlan_id):
-        if not vlan_id:
-            LOG.warning(("Invalid VLAN ID, will lead to incorrect "
-                            "subinterface name"))
-        subinterface_name = '%s.%s' % (physical_interface, vlan_id)
-        return subinterface_name
 
     def set_tag(self, interface_name, tag):
         ovs = ovs_lib.BaseOVS()

@@ -20,8 +20,6 @@ import os
 import stat
 import tempfile
 
-from oslo_utils import excutils
-
 LOG = logging.getLogger(__name__)
 
 _FILE_CACHE = {}
@@ -92,23 +90,6 @@ def delete_if_exists(path, remove=os.unlink):
     except OSError as e:
         if e.errno != errno.ENOENT:
             raise
-
-
-@contextlib.contextmanager
-def remove_path_on_error(path, remove=delete_if_exists):
-    """Protect code that wants to operate on PATH atomically.
-    Any exception will cause PATH to be removed.
-
-    :param path: File to work with
-    :param remove: Optional function to remove passed path
-    """
-
-    try:
-        yield
-    except Exception:
-        with excutils.save_and_reraise_exception():
-            remove(path)
-
 
 def file_open(*args, **kwargs):
     """Open file

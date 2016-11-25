@@ -22,7 +22,7 @@ PREREQUISITES_NOT_SATISFIED = 'PREREQUISITES_NOT_SATISFIED'
 SERVER_ERROR = 'SERVER_ERROR'
 
 # File path
-LOG_FILE = '/var/log/livegate.log'
+LOG_FILE = '/var/log/dhcpagent/nspdhcpagent.log'
 ROUTER_SCRIPT = '/usr/local/livegate/script/router.sh'
 TUNNEL_SCRIPT = '/usr/local/livegate/script/tunnel.sh'
 OVSNAT_SCRIPT = '/usr/local/livegate/script/ovs_nat.sh'

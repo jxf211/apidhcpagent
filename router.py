@@ -224,7 +224,7 @@ class API(Router):
                 else:
                     urls[url] += methods
             for url, methods in urls.items():
-                all_methods = ['HEAD', 'GET', 'POST', 'PATCH', 'DELETE']
+                all_methods = ['HEAD', 'GET', 'POST', 'PATCH', 'DELETE', 'PUT']
                 missing_methods = [m for m in all_methods if m not in methods]
                 allowed_methods_str = ','.join(methods)
                 mapper.connect(url,
@@ -255,7 +255,7 @@ class API(Router):
                         'name':'network_update_end',
                         'url':'/dhcp_network/',
                         'action':'network_update_end',
-                        'method':'PATCH'
+                        'method':'PUT'
                     },
 
                     {
@@ -264,12 +264,21 @@ class API(Router):
                         'action':'network_delete_end',
                         'method':'DELETE'
                     },
+			
+                    
+		    {
+                        'name':'subnet_create_end',
+                        'url':'/dhcp_subnet/',
+                        'action':'subnet_create_end',
+                        'method':'POST'
+                    },
 
-                    {
+ 
+		    {
                         'name':'subnet_update_end',
                         'url':'/dhcp_subnet/',
                         'action':'subnet_update_end',
-                        'method':'PATCH'
+                        'method':'PUT'
                     },
 
                     {
@@ -280,11 +289,19 @@ class API(Router):
                     },
 
                     {
+                        'name':'port_create_end',
+                        'url':'/dhcp_port/',
+                        'action':'port_update_end',
+                        'method':'POST'
+                    },
+		
+                    {
                         'name':'port_update_end',
                         'url':'/dhcp_port/',
                         'action':'port_update_end',
-                        'method':'PATCH'
+                        'method':'PUT'
                     },
+					
 
                     {
                         'name':'port_delete_end',
